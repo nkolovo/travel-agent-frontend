@@ -9,7 +9,7 @@ import Header from "./header";
 import DateList from "./dates";
 import DateSummary from "./summary";
 import ItemList from "./items";
-// testing
+
 export default function ItineraryPage() {
     const searchParams = useSearchParams();
     const [itinerary, setItinerary] = useState<Itinerary>();
