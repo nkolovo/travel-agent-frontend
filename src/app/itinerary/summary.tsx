@@ -9,7 +9,7 @@ interface DateSummaryProps {
 
 const DateSummary: React.FC<DateSummaryProps> = ({ date, activities }) => {
   return (
-    <div>
+    <div className='mt-2'>
       <div className="flex items-center space-x-4 border-b pb-2 mb-4">
         {/* Date with Calendar Icon */}
         <div className="flex items-center space-x-2 text-lg font-semibold text-gray-700">
