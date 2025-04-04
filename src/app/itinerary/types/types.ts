@@ -24,6 +24,7 @@ export interface Itinerary {
   name?: string;
   agent: string;
   createdDate: string;
+  editedDate: string;
   dateSold?: string;
   reservationNumber: string;
   leadName: string;
@@ -41,6 +42,7 @@ export interface Itinerary {
 }
 
 export interface Date {
+  id?: number;
   name: string;
   location: string;
   date: string;

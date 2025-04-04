@@ -69,16 +69,16 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
     if (!itineraryLoaded)
       fetchItinerary()
     const timeout = setTimeout(() => {
-      if ( // Check every 1 seconds if changes occurred and save them
-        title !== prevTitle.current ||
-        tripCost !== prevTripCost.current ||
-        coverImage !== prevCoverImage.current
+      if ( // Check every 2 seconds if changes occurred and save them
+        (title !== prevTitle.current ||
+          tripCost !== prevTripCost.current ||
+          coverImage !== prevCoverImage.current) && !isEditing
       ) {
         saveChanges();
       }
     }, 2000)
     return () => clearTimeout(timeout); // Cleanup timeout 
-  }, [title, tripCost, coverImage])
+  }, [title, tripCost, coverImage, isEditing])
 
   const handleCoverImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

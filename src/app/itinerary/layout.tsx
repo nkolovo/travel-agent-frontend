@@ -31,7 +31,7 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
     });
 
     return (
-        <div className="min-h-screen flex flex-col h-screen">
+        <div className="flex flex-col h-screen overflow-hidden">
             {/* Header Section */}
             <header className="p-4 bg-gray-100 shadow-md flex justify-between items-center">
                 {/* Left Section: Back to Dashboard Button */}
@@ -83,7 +83,7 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
             </header>
 
             {/* Page Content */}
-            <main className="flex flex-1 overflow-hidden">{children}</main>
+            <main className="flex flex-1 min-h-0 overflow-hidden">{children}</main>
         </div>
     );
 }

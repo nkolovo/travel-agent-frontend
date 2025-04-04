@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [newItinerary, setNewItinerary] = useState({
     agent: "", // Autofilled from logged-in user
     createdDate: new Date().toISOString().split("T")[0], // Today's date
+    editedDate: new Date().toISOString(), // Today's date
     reservationNumber: "", // To be fetched from the database
     leadName: "",
     numTravelers: 0
@@ -91,6 +92,7 @@ export default function Dashboard() {
     })
       .then((res) => res.json())
       .then((data) => {
+        console.log(data);
         setItineraries(data);
       })
       .catch((err) => console.error("Error fetching itineraries:", err));
@@ -156,6 +158,7 @@ export default function Dashboard() {
     const itinerary: Itinerary = {
       agent: newItinerary.agent,
       createdDate: newItinerary.createdDate,
+      editedDate: newItinerary.editedDate,
       reservationNumber: newItinerary.reservationNumber,
       leadName: newItinerary.leadName,
       numTravelers: newItinerary.numTravelers,

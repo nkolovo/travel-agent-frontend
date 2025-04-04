@@ -61,8 +61,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   return (
     <html lang="en">
-      <body>
-        <div className="min-h-screen flex flex-col">
+      <body className="min-h-screen flex flex-col">
+        <div className="flex-1 overflow-hidden">
           {/* Page Content */}
           <main className="flex-grow">{children}</main>
         </div>
