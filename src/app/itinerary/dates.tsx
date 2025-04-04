@@ -143,7 +143,9 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onRemoveDate(date);
+                  if (window.confirm("Are you sure you want to delete this date?")) {
+                    onRemoveDate(date);
+                  }
                 }}
                 className="text-red-600 hover:text-red-800 transition duration-150 text-2xl"
               >
