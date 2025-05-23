@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Item } from "./types/types";
 import { FiSearch, FiFilter } from "react-icons/fi"; // Import icons
+import ItemModal from "./itemModal"; // Import the modal component
 
 interface ItemListProps {
   items: Item[]; // List of items (hotels, destinations, etc.)
@@ -11,6 +12,7 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem }) => {
   const [searchTerm, setSearchTerm] = useState(""); // State for search input
   const [selectedLocation, setSelectedLocation] = useState(""); // State for location filter
   const [isFilterOpen, setIsFilterOpen] = useState(false); // Toggle filter dropdown
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
 
   // Get unique locations from items
   const uniqueLocations = [...new Set(items.map((item) => item.location))];
@@ -22,18 +24,25 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem }) => {
   );
 
   const onAddItemClick = () => {
+    setIsModalOpen(true); // Open the modal
+  };
 
-  }
+  const closeModal = () => {
+    setIsModalOpen(false); // Close the modal
+  };
 
   return (
     <div className="p-4 bg-white rounded shadow-md">
       <h2 className="text-xl font-semibold mb-3">Item List</h2>
       <button
-        onClick={() => onAddItemClick}
+        onClick={onAddItemClick}
         className="mb-4 px-4 py-2 bg-blue-500 text-white rounded"
       >
         Add
       </button>
+
+      {/* Render the modal */}
+      {isModalOpen && <ItemModal isOpen={isModalOpen} closeModal={closeModal} />}
 
       {/* Search Bar & Filter */}
       <div className="relative mb-4 flex items-center">
