@@ -49,7 +49,8 @@ export interface Date {
 }
 
 export interface Item {
-  id: number;
+  id?: number;
+  category: string;
   name: string;
   description: string;
   location: string;

@@ -1,14 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
+import type { Item } from "./types/types"; // Importing Item type for TypeScript
 import { FaTimes, FaBold, FaItalic, FaLink } from "react-icons/fa";
 import "./../styles/itemModal.css"; // Importing CSS for modal styling
 
 interface ItemModalProps {
     isOpen: boolean; // Prop to control modal visibility
-    closeModal: () => void; // Function to close the modal
-    item?: { name: string; description: string; category: string }; // Optional item for editing
+    closeModal: (item?: Item) => void; // Function to close the modal
+    item?: Item; // Optional item for editing
 }
 
 const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModal, item }) => {
+    const [location, setLocation] = useState(item?.location || "Greece"); // Default location if not provided
     const [title, setTitle] = useState(item?.name || "");
     const [description, setDescription] = useState(item?.description || "");
     const [category, setCategory] = useState(item?.category || "");
@@ -18,6 +20,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModal, item }) => {
 
     if (!isOpen) return null; // Do not render if isOpen is false
 
+    const locations = ["Greece"]; // List of locations, can be expanded later
     const categories = ["Activity", "Lodging", "Flight", "Transportation", "Cruise", "Info"];
 
     // Function to execute formatting commands
@@ -86,15 +89,76 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModal, item }) => {
         };
     }, []);
 
+    const saveItem = async () => {
+        if (!location || !category || !title || !description) {
+            console.warn("Please fill in all fields before saving.");
+            return;
+        }
+
+        console.log("Saving item");
+        if (item) {
+            console.log("Preexisting item found, updating...");
+            item.category = category;
+            item.name = title;
+            item.description = description;
+        }
+        else {
+            console.log("No preexisting item found, creating new item...");
+            item = {
+                location: location,
+                category: category,
+                name: title,
+                description: description
+            } as Item; // Create a new item object if not editing
+        }
+        console.log("Item to save:", item);
+        await fetch(`http://localhost:8080/api/items/save`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify(item),
+        })
+            .then(res => {
+                if (!res.ok)
+                    throw new Error(`Request error: ${res.status}`);
+                return res.json()
+            })
+            .then(item_id => {
+                item!.id = item_id;
+            })
+            .catch(error => { console.warn(item), console.warn("Error saving changes to item ", error) })
+
+        console.log("Item saved:", item);
+        closeModal(item); // Close the modal after saving
+    }
+
     return (
-        <div className="modal-overlay" onClick={closeModal}>
+        <div className="modal-overlay" onClick={() => closeModal}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2>{item ? "Edit Item" : "Create Item"}</h2>
-                    <FaTimes className="close-icon" onClick={closeModal} />
+                    <FaTimes className="close-icon" onClick={() => closeModal()} />
                 </div>
 
                 <div className="modal-body">
+                    {/* Location Row (only visible by Chris and I) */}
+                    <div className="modal-row">
+                        <span className="modal-row-label">Location</span>
+                        <div className="modal-row-content">
+                            {locations.map((loc) => (
+                                <button
+                                    key={loc}
+                                    className={`enum-button ${location === loc ? "active" : ""}`}
+                                    onClick={() => setLocation(loc)}
+                                >
+                                    {loc}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Category Row */}
                     <div className="modal-row">
                         <span className="modal-row-label">Category</span>
@@ -102,7 +166,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModal, item }) => {
                             {categories.map((cat) => (
                                 <button
                                     key={cat}
-                                    className={`category-button ${category === cat ? "active" : ""}`}
+                                    className={`enum-button ${category === cat ? "active" : ""}`}
                                     onClick={() => setCategory(cat)}
                                 >
                                     {cat}
@@ -181,8 +245,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModal, item }) => {
                 </div>
 
                 <div className="modal-footer">
-                    <button className="modal-button-save" onClick={closeModal}>Save</button>
-                    <button className="modal-button-close" onClick={closeModal}>Close</button>
+                    <button className="modal-button-save" onClick={saveItem}>Save</button>
+                    <button className="modal-button-close" onClick={() => closeModal()}>Close</button>
                 </div>
             </div>
         </div>

@@ -96,7 +96,7 @@
   padding-left: 1rem;
 }
 
-.category-button {
+.enum-button {
   margin-right: 0.5rem;
   padding: 0.5rem 1rem;
   border: 1px solid #ccc;
@@ -106,7 +106,7 @@
   transition: background-color 0.2s;
 }
 
-.category-button.active {
+.enum-button.active {
   background-color: #007bff;
   color: white;
 }

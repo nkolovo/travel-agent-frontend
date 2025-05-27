@@ -109,6 +109,12 @@ export default function ItineraryPage() {
         setActivities([...activities, newActivity]);
     };
 
+    const handleItemUpdate = (items: Item[]) => {
+        console.log("Refreshing items. New item list: ");
+        console.log(items);
+        setItems(items);
+    }
+
     return (
         <div className="flex flex-col flex-1 overflow-hidden">
             {itineraryId !== undefined &&
@@ -133,7 +139,7 @@ export default function ItineraryPage() {
                         </div>
 
                         <div className="col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-3 xl:col-span-3 2xl:col-span-3 flex flex-col overflow-y-auto">
-                            <ItemList items={items} onSelectItem={handleSelectItem} />
+                            <ItemList items={items} onSelectItem={handleSelectItem} onChange={handleItemUpdate} />
                         </div>
                     </div>
                 </div>

@@ -6,9 +6,10 @@ import ItemModal from "./itemModal"; // Import the modal component
 interface ItemListProps {
   items: Item[]; // List of items (hotels, destinations, etc.)
   onSelectItem: (item: Item) => void; // Callback to handle item selection
+  onChange: (items: Item[]) => void; // Callback to handle changes in the item list
 }
 
-const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem }) => {
+const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) => {
   const [searchTerm, setSearchTerm] = useState(""); // State for search input
   const [selectedLocation, setSelectedLocation] = useState(""); // State for location filter
   const [isFilterOpen, setIsFilterOpen] = useState(false); // Toggle filter dropdown
@@ -27,8 +28,14 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem }) => {
     setIsModalOpen(true); // Open the modal
   };
 
-  const closeModal = () => {
+  const closeModal = (item?: Item) => {
     setIsModalOpen(false); // Close the modal
+    if (item) {
+      items.push(item); // Add new item to the list
+      items.sort((a, b) => a.name.localeCompare(b.name)); // Sort items by name
+      console.log("Calling onChange");
+      onChange(items); // Notify parent component of changes
+    }
   };
 
   return (
