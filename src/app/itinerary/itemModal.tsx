@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect } from "react";
-import type { Item } from "./types/types"; // Importing Item type for TypeScript
+import type { Activity, Item } from "./types/types"; // Importing Item type for TypeScript
 import { FaTimes, FaBold, FaItalic, FaLink } from "react-icons/fa";
 import "./../styles/itemModal.css"; // Importing CSS for modal styling
 
 interface ItemModalProps {
     isOpen: boolean; // Prop to control modal visibility
-    closeModal: (item?: Item) => void; // Function to close the modal
+    closeModalItem?: (item?: Item) => void; // Function to close the modal
+    closeModalActivity?: (activity?: Activity) => void; // Function to close the modal
     item?: Item; // Optional item for editing
+    activity?: Activity; // Optional activity for editing
 }
 
-const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModal, item }) => {
+const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModalActivity, item, activity }) => {
     const [location, setLocation] = useState(item?.location || "Greece"); // Default location if not provided
     const [title, setTitle] = useState(item?.name || "");
     const [description, setDescription] = useState(item?.description || "");
@@ -83,6 +85,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModal, item }) => {
 
     // Add event listener for selection changes
     useEffect(() => {
+        if (item) {
+            titleRef.current!.innerText = item!.name;
+            notesRef.current!.innerText = item!.description;
+        }
         document.addEventListener("selectionchange", handleSelectionChange);
         return () => {
             document.removeEventListener("selectionchange", handleSelectionChange);
@@ -91,19 +97,16 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModal, item }) => {
 
     const saveItem = async () => {
         if (!location || !category || !title || !description) {
-            console.warn("Please fill in all fields before saving.");
+            window.alert("Please fill in all fields before saving.");
             return;
         }
 
-        console.log("Saving item");
         if (item) {
-            console.log("Preexisting item found, updating...");
             item.category = category;
             item.name = title;
             item.description = description;
         }
         else {
-            console.log("No preexisting item found, creating new item...");
             item = {
                 location: location,
                 category: category,
@@ -111,7 +114,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModal, item }) => {
                 description: description
             } as Item; // Create a new item object if not editing
         }
-        console.log("Item to save:", item);
+        console.log("Saving item:", item);
         await fetch(`http://localhost:8080/api/items/save`, {
             method: "POST",
             headers: {
@@ -130,16 +133,18 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModal, item }) => {
             })
             .catch(error => { console.warn(item), console.warn("Error saving changes to item ", error) })
 
-        console.log("Item saved:", item);
-        closeModal(item); // Close the modal after saving
+        if (closeModalItem)
+            closeModalItem(item);
+        else if (closeModalActivity)
+            closeModalActivity(activity);
     }
 
     return (
-        <div className="modal-overlay" onClick={() => closeModal}>
+        <div className="modal-overlay" onClick={() => closeModalItem}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2>{item ? "Edit Item" : "Create Item"}</h2>
-                    <FaTimes className="close-icon" onClick={() => closeModal()} />
+                    <FaTimes className="close-icon" onClick={() => (closeModalItem && closeModalItem()) || (closeModalActivity && closeModalActivity())} />
                 </div>
 
                 <div className="modal-body">
@@ -246,7 +251,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModal, item }) => {
 
                 <div className="modal-footer">
                     <button className="modal-button-save" onClick={saveItem}>Save</button>
-                    <button className="modal-button-close" onClick={() => closeModal()}>Close</button>
+                    <button className="modal-button-close" onClick={() => (closeModalItem && closeModalItem()) || (closeModalActivity && closeModalActivity())}>Close</button>
                 </div>
             </div>
         </div>

@@ -57,6 +57,9 @@ export interface Item {
 }
 
 export interface Activity {
-  subheading: string;
+  id?: number;
+  date: Date;
+  item: Item;
+  name: string;
   description: string;
 }

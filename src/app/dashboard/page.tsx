@@ -92,7 +92,6 @@ export default function Dashboard() {
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log(data);
         setItineraries(data);
       })
       .catch((err) => console.error("Error fetching itineraries:", err));

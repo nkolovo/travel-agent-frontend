@@ -72,8 +72,6 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
         });
         if (modifiedDate)
           saveChanges(modifiedDate);
-        else
-          console.warn("No modification to an existing date found, skipping save.")
       }
     }, 2000);
     return () => clearTimeout(timeout);

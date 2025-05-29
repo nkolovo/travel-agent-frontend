@@ -33,6 +33,7 @@ export default function ItineraryPage() {
                     return res.json()
                 })
                 .then(items => {
+                    console.log("Fetched items:", items);
                     setItems(items);
                 })
                 .catch(error =>
@@ -72,6 +73,29 @@ export default function ItineraryPage() {
 
     const handleDayClick = (date: Date) => {
         setSelectedDate(date);
+        fetch(`http://localhost:8080/api/dates/items/${date?.id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+        })
+            .then(res => {
+                if (!res.ok)
+                    throw new Error(`Request error: ${res.status}`);
+                return res.json();
+            })
+            .then(items => {
+                setActivities(items.map((item: Item) => ({
+                    date: date,
+                    item: item,
+                    name: item.name,
+                    description: item.description
+                })));
+            })
+            .catch(error => {
+                console.error("Error fetching items for date:", error);
+            })
     }
 
     const handleNewDayClick = (newDay: Date) => {
@@ -89,12 +113,10 @@ export default function ItineraryPage() {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${localStorage.getItem("token")}`,
             },
-            body: JSON.stringify(date),
         })
             .then(res => {
                 if (!res.ok)
                     throw new Error(`Request error: ${res.status}`);
-                return res.json()
             })
             .then(() => { setDates(dates.filter(d => date.id !== d.id)) })
             .catch(error => console.error("Error saving changes:", error))
@@ -102,16 +124,42 @@ export default function ItineraryPage() {
     }
 
     const handleSelectItem = (item: Item) => {
+        if (!selectedDate) {
+            window.confirm("You have not selected a date for this activity. Please add or select an existing date.");
+            return;
+        }
+
+        saveItemToDate(item);
         const newActivity: Activity = {
-            subheading: item.name,
+            date: selectedDate,
+            item: item,
+            name: item.name,
             description: item.description
         };
         setActivities([...activities, newActivity]);
     };
 
+    const saveItemToDate = (item: Item) => {
+        console.log("Saving item to date:", item.id, "for date:", selectedDate!.id);
+        fetch(`http://localhost:8080/api/dates/add/${selectedDate!.id}/item/${item.id}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+        })
+            .then(res => {
+                if (!res.ok)
+                    throw new Error(`Request error: ${res.status}`);
+            })
+            .catch(error => console.error("Error saving item to date:", error))
+    }
+
+    const handleActivityUpdate = (activities: Activity[]) => {
+        setActivities(activities);
+    }
+
     const handleItemUpdate = (items: Item[]) => {
-        console.log("Refreshing items. New item list: ");
-        console.log(items);
         setItems(items);
     }
 
@@ -123,7 +171,7 @@ export default function ItineraryPage() {
                         <Header itineraryId={itineraryId} />
                     </div>
                     <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
-                        <div className=" h-[calc(100vh-20rem)] flex flex-col flex-1 overflow-hidden col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-3 xl:col-span-3 2xl:col-span-3">
+                        <div className="h-[calc(100vh-20rem)] flex flex-col flex-1 overflow-hidden col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-3 xl:col-span-3 2xl:col-span-3">
                             <DateList
                                 itineraryId={itineraryId}
                                 dates={dates}
@@ -135,10 +183,10 @@ export default function ItineraryPage() {
                         </div>
 
                         <div className="col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-6 xl:col-span-6 2xl:col-span-6 flex flex-col overflow-y-auto">
-                            <DateSummary date={selectedDate} activities={activities} />
+                            <DateSummary date={selectedDate} activities={activities} onChange={handleActivityUpdate} />
                         </div>
 
-                        <div className="col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-3 xl:col-span-3 2xl:col-span-3 flex flex-col overflow-y-auto">
+                        <div className="h-[calc(100vh-20rem)] col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-3 xl:col-span-3 2xl:col-span-3 flex flex-col overflow-y-auto">
                             <ItemList items={items} onSelectItem={handleSelectItem} onChange={handleItemUpdate} />
                         </div>
                     </div>

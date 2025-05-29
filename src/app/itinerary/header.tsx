@@ -21,9 +21,7 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
   const prevCoverImage = useRef(coverImage);
 
   const saveChanges = async () => {
-    console.log("Saving changes");
     const updatedData = { itineraryId, title, tripCost, coverImage };
-    console.log(updatedData);
     try {
       await fetch("http://localhost:8080/api/itineraries/update", {
         method: "PATCH",
@@ -44,7 +42,6 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
 
   useEffect(() => {
     const fetchItinerary = async () => {
-      console.log("From Header: " + itineraryId);
       await fetch(`http://localhost:8080/api/itineraries/${itineraryId}`, {
         method: "GET",
         headers: {
@@ -59,7 +56,6 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
         })
         .then(data => {
           setItineraryLoaded(true);
-          console.log(data);
           setItinerary(data)
           setTitle(data.name ?? title)
           setTripCost(data.tripPrice ?? tripCost)

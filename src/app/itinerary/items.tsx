@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Item } from "./types/types";
-import { FiSearch, FiFilter } from "react-icons/fi"; // Import icons
+import { FiSearch, FiFilter, FiEdit, FiX } from "react-icons/fi"; // Import icons
 import ItemModal from "./itemModal"; // Import the modal component
 
 interface ItemListProps {
@@ -9,10 +9,20 @@ interface ItemListProps {
   onChange: (items: Item[]) => void; // Callback to handle changes in the item list
 }
 
+const categoryColors: Record<string, { base: string; hover: string }> = {
+  Activity: { base: "bg-red-100", hover: "hover:bg-red-200" },
+  Lodging: { base: "bg-orange-100", hover: "hover:bg-orange-200" },
+  Flight: { base: "bg-purple-100", hover: "hover:bg-purple-200" },
+  Transportation: { base: "bg-green-100", hover: "hover:bg-green-200" },
+  Cruise: { base: "bg-blue-100", hover: "hover:bg-blue-200" },
+  Info: { base: "bg-yellow-100", hover: "hover:bg-yellow-200" },
+};
+
 const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) => {
   const [searchTerm, setSearchTerm] = useState(""); // State for search input
   const [selectedLocation, setSelectedLocation] = useState(""); // State for location filter
   const [isFilterOpen, setIsFilterOpen] = useState(false); // Toggle filter dropdown
+  const [selectedItem, setSelectedItem] = useState<Item | undefined>(); // State for selected item
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
 
   // Get unique locations from items
@@ -25,21 +35,56 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
   );
 
   const onAddItemClick = () => {
+    setSelectedItem(undefined); // Clear selected item for new item creation
     setIsModalOpen(true); // Open the modal
   };
+
+  const onItemEdit = (item: Item) => {
+    setSelectedItem(item); // Set the selected item for editing
+    setIsModalOpen(true); // Open the modal for editing
+  };
+
+  const onDeleteItem = async (item: Item) => {
+    // Remove the item from the list
+    await fetch(`http://localhost:8080/api/items/remove/${item.id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then(res => {
+        if (!res.ok)
+          throw new Error(`Request error: ${res.status}`);
+        return res.status
+      })
+      .then(res => {
+        if (res !== 200) {
+          throw new Error(`Error deleting item: ${res}`);
+        }
+        // Remove the item from the local state
+        items = items.filter(i => i.id !== item.id);
+        onChange(items); // Notify parent component of changes
+      })
+      .catch(error => { console.warn(item), console.warn("Error deleting item.", error) })
+  }
 
   const closeModal = (item?: Item) => {
     setIsModalOpen(false); // Close the modal
     if (item) {
-      items.push(item); // Add new item to the list
+      const index = items.findIndex(i => i.id === item.id);
+      if (index !== -1) {
+        items[index] = item; // Replace existing item
+      } else {
+        items.push(item); // Add new item
+      }
       items.sort((a, b) => a.name.localeCompare(b.name)); // Sort items by name
-      console.log("Calling onChange");
       onChange(items); // Notify parent component of changes
     }
   };
 
   return (
-    <div className="p-4 bg-white rounded shadow-md">
+    <div className="p-4 bg-white rounded shadow-md h-full flex flex-col">
       <h2 className="text-xl font-semibold mb-3">Item List</h2>
       <button
         onClick={onAddItemClick}
@@ -49,7 +94,7 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
       </button>
 
       {/* Render the modal */}
-      {isModalOpen && <ItemModal isOpen={isModalOpen} closeModal={closeModal} />}
+      {isModalOpen && <ItemModal isOpen={isModalOpen} closeModalItem={closeModal} item={selectedItem} />}
 
       {/* Search Bar & Filter */}
       <div className="relative mb-4 flex items-center">
@@ -98,24 +143,49 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
       </div>
 
       {/* Item List */}
-      <ul className="space-y-2">
-        {filteredItems.length > 0 ? (
-          filteredItems.map((item) => (
-            <li key={item.id}>
-              <button
-                onClick={() => onSelectItem(item)}
-                className="w-full text-left p-2 border rounded hover:bg-gray-100 transition"
-              >
-                <h3 className="font-medium">{item.name}</h3>
-                <p className="text-sm text-gray-600">{item.description}</p>
-                <p className="text-xs text-gray-500">{item.location}</p>
-              </button>
-            </li>
-          ))
-        ) : (
-          <li className="text-gray-500 text-center">No items found</li>
-        )}
-      </ul>
+      <div className="flex-1 overflow-y-auto">
+        <ul className="space-y-2">
+          {filteredItems.length > 0 ? (
+            filteredItems.map((item) => (
+              <li key={item.id}>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onSelectItem(item)}
+                    className={`flex-1 text-left p-2 border rounded hover:bg-gray-100 transition 
+                      ${categoryColors[item.category]?.base || ""} 
+                      ${categoryColors[item.category]?.hover || ""}`}
+                  >
+                    <h3 className="font-medium">{item.name}</h3>
+                    <p className="text-sm text-gray-600">{item.description}</p>
+                    <p className="text-xs text-gray-500">{item.location}</p>
+                  </button>
+                  <button
+                    onClick={() => onItemEdit(item)}
+                    className="text-gray-600 hover:text-blue-600 transition duration-150"
+                    tabIndex={-1}
+                  >
+                    <FiEdit />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm("Are you sure you want to delete this item? This action cannot be undone.")) {
+                        onDeleteItem(item);
+                      }
+                    }}
+                    className="text-red-600 hover:text-red-800 transition duration-150 text-2xl"
+                    tabIndex={-1}
+                  >
+                    <FiX />
+                  </button>
+                </div>
+              </li>
+            ))
+          ) : (
+            <li className="text-gray-500 text-center">No items found</li>
+          )}
+        </ul>
+      </div>
     </div>
   );
 };
