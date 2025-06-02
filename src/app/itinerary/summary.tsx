@@ -77,7 +77,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
         <div className="h-6 w-px bg-gray-400"></div>
 
         {/* Render the modal */}
-      {isModalOpen && <ItemModal isOpen={isModalOpen} closeModalActivity={closeModal} activity={selectedActivity} />}
+        {isModalOpen && <ItemModal isOpen={isModalOpen} closeModalActivity={closeModal} activity={selectedActivity} />}
 
         {/* Name */}
         <div className="flex items-center space-x-2 text-lg font-semibold text-gray-700">

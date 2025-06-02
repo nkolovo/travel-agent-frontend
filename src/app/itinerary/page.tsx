@@ -61,6 +61,7 @@ export default function ItineraryPage() {
                         // Comparing dates (a.date and b.date are strings in ISO format)
                         return new Date(a.date).getTime() - new Date(b.date).getTime();
                     });
+                    console.log("Fetched itinerary dates:", itinerary.dates);
                     setDates(itinerary.dates);
                 })
                 .catch(error =>
