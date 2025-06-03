@@ -20,17 +20,21 @@ const categoryColors: Record<string, { base: string; hover: string }> = {
 
 const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) => {
   const [searchTerm, setSearchTerm] = useState(""); // State for search input
+  const [selectedCountry, setSelectedCountry] = useState(""); // State for country filter
   const [selectedLocation, setSelectedLocation] = useState(""); // State for location filter
-  const [isFilterOpen, setIsFilterOpen] = useState(false); // Toggle filter dropdown
+  const [isFilterOpenCountry, setIsFilterOpenCountry] = useState(false); // Toggle country filter dropdown
+  const [isFilterOpenLocation, setIsFilterOpenLocation] = useState(false); // Toggle location filter dropdown
   const [selectedItem, setSelectedItem] = useState<Item | undefined>(); // State for selected item
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
 
-  // Get unique locations from items
+  // Get unique countries & locations from items
+  const uniqueCountries = [...new Set(items.map((item) => item.country))];
   const uniqueLocations = [...new Set(items.map((item) => item.location))];
 
-  // Filter items based on search term & selected location
+  // Filter items based on search term & selected country & location
   const filteredItems = items.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (selectedCountry === "" || item.country === selectedCountry) &&
     (selectedLocation === "" || item.location === selectedLocation)
   );
 
@@ -113,18 +117,44 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
         {/* Filter Icon */}
         <div className="relative">
           <button
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            onClick={() => setIsFilterOpenCountry(!isFilterOpenCountry)}
             className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-800"
           >
             <FiFilter className="text-lg" />
           </button>
+          <button
+            onClick={() => setIsFilterOpenLocation(!isFilterOpenLocation)}
+            className="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-800"
+          >
+            <FiFilter className="text-lg" />
+          </button>
 
+          {/* Dropdown for Country Filter */}
+          {isFilterOpenCountry && (
+            <div className="absolute right-0 mt-2 bg-white border shadow-md rounded w-40 z-10">
+              <button
+                className={`block w-full text-left px-4 py-2 text-sm ${selectedCountry === "" ? "bg-gray-200" : "hover:bg-gray-100"}`}
+                onClick={() => { setSelectedCountry(""); setIsFilterOpenCountry(false); }}
+              >
+                All Countries
+              </button>
+              {uniqueCountries.map((country) => (
+                <button
+                  key={country}
+                  className={`block w-full text-left px-4 py-2 text-sm ${selectedCountry === country ? "bg-gray-200" : "hover:bg-gray-100"}`}
+                  onClick={() => { setSelectedCountry(country); setIsFilterOpenCountry(false); }}
+                >
+                  {country}
+                </button>
+              ))}
+            </div>
+          )}
           {/* Dropdown for Location Filter */}
-          {isFilterOpen && (
+          {isFilterOpenLocation && (
             <div className="absolute right-0 mt-2 bg-white border shadow-md rounded w-40 z-10">
               <button
                 className={`block w-full text-left px-4 py-2 text-sm ${selectedLocation === "" ? "bg-gray-200" : "hover:bg-gray-100"}`}
-                onClick={() => { setSelectedLocation(""); setIsFilterOpen(false); }}
+                onClick={() => { setSelectedLocation(""); setIsFilterOpenLocation(false); }}
               >
                 All Locations
               </button>
@@ -132,7 +162,7 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
                 <button
                   key={location}
                   className={`block w-full text-left px-4 py-2 text-sm ${selectedLocation === location ? "bg-gray-200" : "hover:bg-gray-100"}`}
-                  onClick={() => { setSelectedLocation(location); setIsFilterOpen(false); }}
+                  onClick={() => { setSelectedLocation(location); setIsFilterOpenLocation(false); }}
                 >
                   {location}
                 </button>

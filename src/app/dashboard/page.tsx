@@ -81,7 +81,6 @@ export default function Dashboard() {
     if (filters.reservationNumber || filters.leadName) {
       url += `?${new URLSearchParams(Object.entries(filters).filter(([, v]) => v?.trim())).toString()}`;
     }
-    console.log(url);
 
     fetch(url, {
       method: "GET",
@@ -92,14 +91,12 @@ export default function Dashboard() {
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log(data);
         setItineraries(data);
       })
       .catch((err) => console.error("Error fetching itineraries:", err));
   };
 
   const handleSort = (column: keyof Itinerary) => {
-    console.log(column);
     const order = sortColumn === column && sortOrder === "asc" ? "desc" : "asc";
 
     setSortColumn(column);
@@ -164,15 +161,8 @@ export default function Dashboard() {
       numTravelers: newItinerary.numTravelers,
       tripPrice: 0,
       status: "Proposal",
-      client: {
-        name: newItinerary.leadName
-      },
-      user: {
-        username: newItinerary.agent
-      }
+      client: newItinerary.leadName,
     };
-
-    console.log(itinerary);
 
     const response = await fetch("http://localhost:8080/api/itineraries/create", {
       method: "POST",

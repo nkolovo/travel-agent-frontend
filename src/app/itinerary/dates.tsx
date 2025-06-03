@@ -38,7 +38,6 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
   }
 
   const saveChanges = async (date: Date) => {
-    console.log(date);
     await fetch(`http://localhost:8080/api/itineraries/update/date`, {
       method: "PATCH",
       headers: {
@@ -74,7 +73,7 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
         if (modifiedDate)
           saveChanges(modifiedDate);
       }
-    }, 2000);
+    }, 1000);
     return () => clearTimeout(timeout);
   }, [dates]);
 

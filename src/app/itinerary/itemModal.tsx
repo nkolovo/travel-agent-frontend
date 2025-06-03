@@ -12,7 +12,8 @@ interface ItemModalProps {
 }
 
 const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModalActivity, item, activity }) => {
-    const [location, setLocation] = useState(item?.location || "Greece"); // Default location if not provided
+    const [country, setCountry] = useState(item?.country || "Greece"); // Default country if not provided
+    const [location, setLocation] = useState(item?.location || ""); // Default location if not provided
     const [title, setTitle] = useState(item?.name || "");
     const [description, setDescription] = useState(item?.description || "");
     const [category, setCategory] = useState(item?.category || "");
@@ -22,7 +23,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
 
     if (!isOpen) return null; // Do not render if isOpen is false
 
-    const locations = ["Greece"]; // List of locations, can be expanded later
+    const countries = ["Greece", "Italy", "Spain", "France"]; // List of countries, can be expanded later
+    const locations = ["Athens", "Mykonos", "Ios", "Paros", "Naxos", "Crete"]; // List of locations, can be expanded later
     const categories = ["Activity", "Lodging", "Flight", "Transportation", "Cruise", "Info"];
 
     // Function to execute formatting commands
@@ -102,19 +104,21 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         }
 
         if (item) {
+            item.country = country;
+            item.location = location;
             item.category = category;
             item.name = title;
             item.description = description;
         }
         else {
             item = {
+                country: country,
                 location: location,
                 category: category,
                 name: title,
                 description: description
             } as Item; // Create a new item object if not editing
         }
-        console.log("Saving item:", item);
         await fetch(`http://localhost:8080/api/items/save`, {
             method: "POST",
             headers: {
@@ -126,10 +130,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             .then(res => {
                 if (!res.ok)
                     throw new Error(`Request error: ${res.status}`);
-                return res.json()
-            })
-            .then(item_id => {
-                item!.id = item_id;
             })
             .catch(error => { console.warn(item), console.warn("Error saving changes to item ", error) })
 
@@ -148,7 +148,23 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 </div>
 
                 <div className="modal-body">
-                    {/* Location Row (only visible by Chris and I) */}
+                    {/* Country Row (only visible by Chris and I) */}
+                    <div className="modal-row">
+                        <span className="modal-row-label">Country</span>
+                        <div className="modal-row-content">
+                            {countries.map((cntry) => (
+                                <button
+                                    key={cntry}
+                                    className={`enum-button ${country === cntry ? "active" : ""}`}
+                                    onClick={() => setCountry(cntry)}
+                                >
+                                    {cntry}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Location Row */}
                     <div className="modal-row">
                         <span className="modal-row-label">Location</span>
                         <div className="modal-row-content">

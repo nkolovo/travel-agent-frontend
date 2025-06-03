@@ -33,7 +33,6 @@ export default function ItineraryPage() {
                     return res.json()
                 })
                 .then(items => {
-                    console.log("Fetched items:", items);
                     setItems(items);
                 })
                 .catch(error =>
@@ -61,7 +60,6 @@ export default function ItineraryPage() {
                         // Comparing dates (a.date and b.date are strings in ISO format)
                         return new Date(a.date).getTime() - new Date(b.date).getTime();
                     });
-                    console.log("Fetched itinerary dates:", itinerary.dates);
                     setDates(itinerary.dates);
                 })
                 .catch(error =>
@@ -100,6 +98,10 @@ export default function ItineraryPage() {
     }
 
     const handleNewDayClick = (newDay: Date) => {
+        if (dates.length > 0) {
+            const lastDate = dates[dates.length - 1];
+            newDay.date = new Date(new Date(lastDate.date).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Set to next day
+        }
         setDates((prevDates) => [...prevDates, newDay]);
     };
 
@@ -141,7 +143,6 @@ export default function ItineraryPage() {
     };
 
     const saveItemToDate = (item: Item) => {
-        console.log("Saving item to date:", item.id, "for date:", selectedDate!.id);
         fetch(`http://localhost:8080/api/dates/add/${selectedDate!.id}/item/${item.id}`, {
             method: "POST",
             headers: {
