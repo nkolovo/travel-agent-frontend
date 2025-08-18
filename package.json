@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
     "next": "^15.1.6",

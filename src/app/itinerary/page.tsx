@@ -85,11 +85,16 @@ export default function ItineraryPage() {
                 return res.json();
             })
             .then(items => {
-                setActivities(items.map((item: Item) => ({
+                console.log(items);
+                setActivities(items.map((item: Activity) => ({
                     date: date,
                     item: item,
                     name: item.name,
-                    description: item.description
+                    description: item.description,
+                    country: item.country,
+                    location: item.location,
+                    category: item.category,
+                    priority: item.priority,
                 })));
             })
             .catch(error => {
@@ -132,18 +137,40 @@ export default function ItineraryPage() {
             return;
         }
 
-        saveItemToDate(item);
+        // if the item already exists in the activities for the selected date, do not add it again
+        if (activities.some(activity => activity.item.id === item.id && activity.date.id === selectedDate.id)) {
+            window.alert("This item is already added to the selected date.");
+            return;
+        }
+
+        console.log("Total activities: " + activities.length);
+
+        console.log("Highest found priority in current activities: " + (activities.length > 0
+            ? Math.max(...activities.map(a => a.priority ?? 0)) + 1 : 1));
+
+        console.log(activities);
+
         const newActivity: Activity = {
             date: selectedDate,
             item: item,
             name: item.name,
-            description: item.description
+            description: item.description,
+            country: item.country,
+            location: item.location,
+            category: item.category,
+            priority: activities.length > 0
+                ? Math.max(...activities.map(a => a.priority ?? 0)) + 1
+                : 1,
         };
+
+        item.priority = newActivity.priority; // Update item priority
+        saveItemToDate(item);
         setActivities([...activities, newActivity]);
     };
 
     const saveItemToDate = (item: Item) => {
-        fetch(`http://localhost:8080/api/dates/add/${selectedDate!.id}/item/${item.id}`, {
+        console.log("Saving item to date:", item);
+        fetch(`http://localhost:8080/api/dates/add/${selectedDate!.id}/item/${item.id}/priority/${item.priority}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -157,8 +184,37 @@ export default function ItineraryPage() {
             .catch(error => console.error("Error saving item to date:", error))
     }
 
-    const handleActivityUpdate = (activities: Activity[]) => {
-        setActivities(activities);
+    const saveActivityToDate = (activity: Activity) => {
+        console.log("Saving activity to date:", activity);
+        fetch(`http://localhost:8080/api/dates/saveCustomItem/${activity.date.id}/item/${activity.item.id}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify(activity),
+        })
+            .then(res => {
+                if (!res.ok)
+                    throw new Error(`Request error: ${res.status}`);
+            })
+            .catch(error => console.error("Error saving item to date:", error))
+    }
+
+    const handleActivityUpdate = (acts: Activity[]) => {
+        console.log("Activities updated:", acts);
+        const changedActivity = acts.find(
+            act => {
+                const original = activities.find(a => a.item.id === act.item.id);
+                return original && JSON.stringify(act) !== JSON.stringify(original);
+            }
+        );
+
+        if (changedActivity) {
+            console.log("Changed activity found:", changedActivity);
+            saveActivityToDate(changedActivity);
+        }
+        setActivities(acts);
     }
 
     const handleItemUpdate = (items: Item[]) => {

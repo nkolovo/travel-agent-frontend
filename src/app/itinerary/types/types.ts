@@ -54,12 +54,17 @@ export interface Item {
   category: string;
   name: string;
   description: string;
+  priority?: number;
 }
 
 export interface Activity {
   id?: number;
   date: Date;
   item: Item;
+  country: string;
+  location: string;
+  category: string;
   name: string;
   description: string;
+  priority: number;
 }

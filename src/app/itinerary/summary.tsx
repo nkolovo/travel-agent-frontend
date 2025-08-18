@@ -1,4 +1,5 @@
 import React, { act, useState } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import type { Date, Item } from './types/types';
 import { Activity } from './types/types';
 import { FaCalendarAlt, FaPlaneArrival } from "react-icons/fa";
@@ -16,7 +17,8 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
 
   const onCustomizeAcivity = (activity: Activity) => {
-
+    setSelectedActivity(activity); // Set the selected activity for editing
+    setIsModalOpen(true); // Open the modal
   }
 
   const onRemoveItemFromDate = async (activity: Activity) => {
@@ -56,15 +58,32 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
     }
   };
 
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const reordered = Array.from(activities);
+    const [removed] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, removed);
+
+    // Update priority based on new order
+    const updated = reordered.map((activity, idx) => ({
+      ...activity,
+      priority: idx + 1,
+    }));
+
+    onChange(updated);
+  };
+
   return (
     <div className='mt-2'>
+      {/* Render the modal */}
+      {isModalOpen && <ItemModal isOpen={isModalOpen} closeModalActivity={closeModal} activity={selectedActivity} />}
       <div className="flex items-center space-x-4 border-b pb-2 mb-4">
         {/* Date with Calendar Icon */}
         <div className="flex items-center space-x-2 text-lg font-semibold text-gray-700">
           <FaCalendarAlt className="text-blue-500" />
           <span>
             {date?.date
-              ? new Date(date.date).toLocaleDateString("en-US", {
+              ? new Date(date.date + "T00:00:00").toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
@@ -87,44 +106,62 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
       </div>
 
       <div>
-        {activities.length > 0 ? (
-          activities.map((activity, index) => (
-            <div className='mb-4 p-4 bg-gray-100 rounded shadow-sm' key={index}>
-              {/* Heading row: h2 and X button */}
-              <div className="flex items-center justify-between">
-                <h2 className='text-xl font-semibold'>{activity.name}</h2>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (window.confirm("Are you sure you want to remove this item from this date? This action cannot be undone.")) {
-                      onRemoveItemFromDate(activity);
-                    }
-                  }}
-                  className="text-red-600 hover:text-red-800 transition duration-150 text-2xl"
-                  tabIndex={-1}
-                >
-                  <FiX />
-                </button>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="activities">
+            {(provided) => (
+              <div ref={provided.innerRef} {...provided.droppableProps}>
+                {activities.length > 0 ? (
+                  activities.map((activity, index) => (
+                    <Draggable key={activity.item.id} draggableId={activity.item!.id!.toString()} index={index}>
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className='mb-4 p-4 bg-gray-100 rounded shadow-sm cursor-move'
+                        >
+                          {/* Heading row: h2 and X button */}
+                          <div className="flex items-center justify-between">
+                            <h2 className='text-xl font-semibold'>{activity.name}</h2>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm("Are you sure you want to remove this item from this date? This action cannot be undone.")) {
+                                  onRemoveItemFromDate(activity);
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-800 transition duration-150 text-2xl"
+                              tabIndex={-1}
+                            >
+                              <FiX />
+                            </button>
+                          </div>
+                          {/* Toolbar and Description row */}
+                          <div className="flex items-start gap-2 mt-2">
+                            <button
+                              onClick={() => onCustomizeAcivity(activity)}
+                              className="text-gray-600 hover:text-blue-600 transition duration-150 mt-1"
+                              tabIndex={-1}
+                            >
+                              <FiEdit />
+                            </button>
+                            <div className="flex flex-col flex-1">
+                              {/* Description */}
+                              <p className='text-gray-600'>{activity.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))
+                ) : (
+                  <h1>No activities for this date.</h1>
+                )}
+                {provided.placeholder}
               </div>
-              {/* Toolbar and Description row */}
-              <div className="flex items-start gap-2 mt-2">
-                <button
-                  onClick={() => onCustomizeAcivity(activity)}
-                  className="text-gray-600 hover:text-blue-600 transition duration-150 mt-1"
-                  tabIndex={-1}
-                >
-                  <FiEdit />
-                </button>
-                <div className="flex flex-col flex-1">
-                  {/* Description */}
-                  <p className='text-gray-600'>{activity.description}</p>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <h1>No activities for this date.</h1>
-        )}
+            )}
+          </Droppable>
+        </DragDropContext>
       </div>
     </div>
   );

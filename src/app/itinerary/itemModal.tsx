@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import type { Activity, Item } from "./types/types"; // Importing Item type for TypeScript
 import { FaTimes, FaBold, FaItalic, FaLink } from "react-icons/fa";
 import "./../styles/itemModal.css"; // Importing CSS for modal styling
+import { it } from "node:test";
 
 interface ItemModalProps {
     isOpen: boolean; // Prop to control modal visibility
@@ -23,11 +24,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
 
     if (!isOpen) return null; // Do not render if isOpen is false
 
-    const countries = ["Greece", "Italy", "Spain", "France"]; // List of countries, can be expanded later
-    const locations = ["Athens", "Mykonos", "Ios", "Paros", "Naxos", "Crete"]; // List of locations, can be expanded later
+    const countries = ["Greece", "Italy", "Spain", "France"];
+    const locations = ["Athens", "Mykonos", "Ios", "Paros", "Naxos", "Crete"];
     const categories = ["Activity", "Lodging", "Flight", "Transportation", "Cruise", "Info"];
 
-    // Function to execute formatting commands
     const handleFormat = (command: string, value?: string) => {
         // Ensure the contentEditable div is focused
         if (notesRef.current) {
@@ -103,47 +103,60 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             return;
         }
 
-        if (item) {
-            item.country = country;
-            item.location = location;
-            item.category = category;
-            item.name = title;
-            item.description = description;
-        }
-        else {
-            item = {
-                country: country,
-                location: location,
-                category: category,
+        let objectToSave: Item | Activity;
+        if (item && !activity) { // If editing an existing item
+            objectToSave = {
+                ...item,
+                country,
+                location,
+                category,
                 name: title,
-                description: description
-            } as Item; // Create a new item object if not editing
+                description
+            };
+        } else if (activity && !item) { // If editing an existing activity
+            objectToSave = {
+                ...activity,
+                country,
+                location,
+                category,
+                name: title,
+                description
+            };
+        } else {
+            objectToSave = {
+                country,
+                location,
+                category,
+                name: title,
+                description
+            } as Item;
         }
+
         await fetch(`http://localhost:8080/api/items/save`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${localStorage.getItem("token")}`,
             },
-            body: JSON.stringify(item),
+            body: JSON.stringify(objectToSave),
         })
             .then(res => {
                 if (!res.ok)
                     throw new Error(`Request error: ${res.status}`);
             })
-            .catch(error => { console.warn(item), console.warn("Error saving changes to item ", error) })
+            .catch(error => { console.warn(objectToSave), console.warn("Error saving changes to item ", error) })
 
         if (closeModalItem)
-            closeModalItem(item);
+            closeModalItem(objectToSave as Item);
         else if (closeModalActivity)
-            closeModalActivity(activity);
+            closeModalActivity(objectToSave as Activity);
     }
 
     return (
         <div className="modal-overlay" onClick={() => closeModalItem}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2>{item ? "Edit Item" : "Create Item"}</h2>
+                    <h2>{item ? "Edit Item" : activity ? "Edit Item for Date" : "Create Item"}</h2>
                     <FaTimes className="close-icon" onClick={() => (closeModalItem && closeModalItem()) || (closeModalActivity && closeModalActivity())} />
                 </div>
 
