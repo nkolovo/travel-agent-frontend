@@ -186,7 +186,7 @@ export default function ItineraryPage() {
 
     const saveActivityToDate = (activity: Activity) => {
         console.log("Saving activity to date:", activity);
-        fetch(`http://localhost:8080/api/dates/saveCustomItem/${activity.date.id}/item/${activity.item.id}`, {
+        fetch(`http://localhost:8080/api/dates/saveDateItem/${activity.date.id}/item/${activity.item.id}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
