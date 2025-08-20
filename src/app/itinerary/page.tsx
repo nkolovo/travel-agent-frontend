@@ -19,6 +19,7 @@ export default function ItineraryPage() {
     const [items, setItems] = useState<Item[]>([]);
 
     useEffect(() => {
+        console.log("Rerendered");
         const fetchItems = async () => {
             await fetch('http://localhost:8080/api/items', {
                 method: "GET",
@@ -71,6 +72,8 @@ export default function ItineraryPage() {
     }, []);
 
     const handleDayClick = (date: Date) => {
+        if (date === selectedDate)
+            return;
         setSelectedDate(date);
         fetch(`http://localhost:8080/api/dates/items/${date?.id}`, {
             method: "GET",
@@ -84,17 +87,16 @@ export default function ItineraryPage() {
                     throw new Error(`Request error: ${res.status}`);
                 return res.json();
             })
-            .then(items => {
-                console.log(items);
-                setActivities(items.map((item: Activity) => ({
+            .then(activities => {
+                setActivities(activities.map((activity: Activity) => ({
                     date: date,
-                    item: item,
-                    name: item.name,
-                    description: item.description,
-                    country: item.country,
-                    location: item.location,
-                    category: item.category,
-                    priority: item.priority,
+                    item: activity.item,
+                    name: activity.name,
+                    description: activity.description,
+                    country: activity.country,
+                    location: activity.location,
+                    category: activity.category,
+                    priority: activity.priority,
                 })));
             })
             .catch(error => {
@@ -115,6 +117,10 @@ export default function ItineraryPage() {
     };
 
     const handleRemoveDate = (date: Date) => {
+        if (date === selectedDate) {
+            setSelectedDate(undefined);
+            setActivities([]); // Clear activities when date is removed
+        }
         fetch(`http://localhost:8080/api/itineraries/remove/date/${date.id}/${itineraryId}`, {
             method: "POST",
             headers: {
@@ -128,7 +134,6 @@ export default function ItineraryPage() {
             })
             .then(() => { setDates(dates.filter(d => date.id !== d.id)) })
             .catch(error => console.error("Error saving changes:", error))
-
     }
 
     const handleSelectItem = (item: Item) => {
@@ -142,13 +147,6 @@ export default function ItineraryPage() {
             window.alert("This item is already added to the selected date.");
             return;
         }
-
-        console.log("Total activities: " + activities.length);
-
-        console.log("Highest found priority in current activities: " + (activities.length > 0
-            ? Math.max(...activities.map(a => a.priority ?? 0)) + 1 : 1));
-
-        console.log(activities);
 
         const newActivity: Activity = {
             date: selectedDate,
@@ -169,7 +167,6 @@ export default function ItineraryPage() {
     };
 
     const saveItemToDate = (item: Item) => {
-        console.log("Saving item to date:", item);
         fetch(`http://localhost:8080/api/dates/add/${selectedDate!.id}/item/${item.id}/priority/${item.priority}`, {
             method: "POST",
             headers: {
@@ -185,7 +182,6 @@ export default function ItineraryPage() {
     }
 
     const saveActivityToDate = (activity: Activity) => {
-        console.log("Saving activity to date:", activity);
         fetch(`http://localhost:8080/api/dates/saveDateItem/${activity.date.id}/item/${activity.item.id}`, {
             method: "POST",
             headers: {
@@ -202,7 +198,6 @@ export default function ItineraryPage() {
     }
 
     const handleActivityUpdate = (acts: Activity[]) => {
-        console.log("Activities updated:", acts);
         const changedActivity = acts.find(
             act => {
                 const original = activities.find(a => a.item.id === act.item.id);
@@ -211,7 +206,6 @@ export default function ItineraryPage() {
         );
 
         if (changedActivity) {
-            console.log("Changed activity found:", changedActivity);
             saveActivityToDate(changedActivity);
         }
         setActivities(acts);

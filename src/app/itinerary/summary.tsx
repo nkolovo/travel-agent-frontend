@@ -1,15 +1,16 @@
-import React, { act, useState } from 'react';
+import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import type { Date, Item } from './types/types';
+import type { Date } from './types/types';
 import { Activity } from './types/types';
-import { FaCalendarAlt, FaPlaneArrival } from "react-icons/fa";
+import { FaCalendarAlt } from "react-icons/fa";
 import { FiEdit, FiX } from 'react-icons/fi';
 import ItemModal from './itemModal';
+import DOMPurify from "dompurify";
 
 interface DateSummaryProps {
   date: Date | undefined; // The selected date
   activities: Activity[]; // List of activities on that date
-  onChange: (activities: Activity[]) => void; // Callback to notify parent component of changes
+  onChange: (activities: Activity[]) => void; // Callback to handle changes in the activity list
 }
 
 const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange }) => {
@@ -49,11 +50,10 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
   const closeModal = (activity?: Activity) => {
     setIsModalOpen(false); // Close the modal
     if (activity) {
-      const index = activities.findIndex(a => a.item.id === activity.id);
+      const index = activities.findIndex(a => a.item.id === activity.item.id);
       if (index !== -1) {
         activities[index] = activity; // Replace existing activity
       }
-      activities.sort((a, b) => a.name.localeCompare(b.name)); // Sort activities by name
       onChange(activities); // Notify parent component of changes
     }
   };
@@ -75,8 +75,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
 
   return (
     <div className='mt-2'>
-      {/* Render the modal */}
-      {isModalOpen && <ItemModal isOpen={isModalOpen} closeModalActivity={closeModal} activity={selectedActivity} />}
+
       <div className="flex items-center space-x-4 border-b pb-2 mb-4">
         {/* Date with Calendar Icon */}
         <div className="flex items-center space-x-2 text-lg font-semibold text-gray-700">
@@ -95,15 +94,15 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
         {/* Vertical Divider */}
         <div className="h-6 w-px bg-gray-400"></div>
 
-        {/* Render the modal */}
-        {isModalOpen && <ItemModal isOpen={isModalOpen} closeModalActivity={closeModal} activity={selectedActivity} />}
-
         {/* Name */}
         <div className="flex items-center space-x-2 text-lg font-semibold text-gray-700">
           {/* <FaPlaneArrival className="text-green-500" /> */}
           <span>{date?.name}</span>
         </div>
       </div>
+
+      {/* Render the modal */}
+      {isModalOpen && <ItemModal isOpen={isModalOpen} closeModalActivity={closeModal} activity={selectedActivity} />}
 
       <div>
         <DragDropContext onDragEnd={handleDragEnd}>
@@ -122,7 +121,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
                         >
                           {/* Heading row: h2 and X button */}
                           <div className="flex items-center justify-between">
-                            <h2 className='text-xl font-semibold'>{activity.name}</h2>
+                            <h2 className='text-xl font-semibold' dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activity.name) }} />
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -147,7 +146,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
                             </button>
                             <div className="flex flex-col flex-1">
                               {/* Description */}
-                              <p className='text-gray-600'>{activity.description}</p>
+                              <p className='text-gray-600' dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activity.description) }} />
                             </div>
                           </div>
                         </div>

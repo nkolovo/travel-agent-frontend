@@ -15,6 +15,8 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
   const [selectedDate, setSelectedDate] = useState<Date>();
   const dateAdded = useRef<boolean>(false)
   const [prevDates, setPrevDates] = useState<Date[]>(dates.map(date => ({ ...date })))
+  const [isAddingDay, setIsAddingDay] = useState<boolean>(false);
+  const [addingIndex, setAddingIndex] = useState<number | null>(null);
 
   const handleDateAdd = async (date: Date) => {
     await fetch(`http://localhost:8080/api/itineraries/add/date/${itineraryId}`, {
@@ -33,6 +35,8 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
       .then((data) => {
         date.id = data.id;
         dateAdded.current = false;
+        setAddingIndex(null);
+        setIsAddingDay(false);
       })
       .catch(error => console.error("Error adding dates", error));
   }
@@ -93,6 +97,8 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden mt-2">
       <button
         onClick={() => {
+          setAddingIndex(dates.length);
+          setIsAddingDay(true);
           dateAdded.current = true;
           onNewDayClick({
             name: "New Day",
@@ -100,7 +106,8 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
             date: new Date().toISOString().split("T")[0],
           });
         }}
-        className="mb-4 px-4 py-2 bg-blue-500 text-white rounded"
+        disabled={isAddingDay}
+        className={`mb-4 px-4 py-2 rounded text-white ${isAddingDay ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500"}`}
       >
         + New Day
       </button>
@@ -110,9 +117,17 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
         {dates.map((date, index) => (
           <li
             key={index}
-            onClick={() => { onSelectedDate(date), setSelectedDate(date) }}
-            className={`cursor-pointer p-4 rounded-lg mt-4 transition-all duration-200 ease-in-out shadow-md ${selectedDate === date ? 'bg-blue-200' : 'hover:bg-gray-200'}`}
+            aria-disabled={addingIndex === index}
+            onClick={() => {
+              if (addingIndex !== index) {
+                onSelectedDate(date);
+                setSelectedDate(date);
+              }
+            }}
+            className={`${addingIndex === index ? 'bg-gray-300 cursor-not-allowed opacity-60' : 'cursor-pointer'} p-4 rounded-lg mt-4 transition-all duration-200 ease-in-out shadow-md
+      ${selectedDate === date ? 'bg-blue-200' : 'hover:bg-gray-200'}`}
           >
+            {/* ...rest of your item... */}
             <div className="flex items-center justify-between w-full space-x-2">
               <div className="flex items-center space-x-2 flex-grow">
                 <input
@@ -155,6 +170,7 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
               <input
                 type="date"
                 value={date.date}
+                disabled={isAddingDay}
                 onChange={(e) => handleDateChange(index, e.target.value)}
                 className="bg-transparent border-none w-full p-2 rounded-lg mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -162,7 +178,7 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
           </li>
         ))}
       </ul>
-    </div>
+    </div >
   );
 };
 

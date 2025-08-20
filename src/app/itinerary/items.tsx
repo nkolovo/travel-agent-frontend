@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Item } from "./types/types";
 import { FiSearch, FiFilter, FiEdit, FiX } from "react-icons/fi"; // Import icons
 import ItemModal from "./itemModal"; // Import the modal component
+import DOMPurify from "dompurify";
 
 interface ItemListProps {
   items: Item[]; // List of items (hotels, destinations, etc.)
@@ -82,7 +83,6 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
       } else {
         items.push(item); // Add new item
       }
-      items.sort((a, b) => a.name.localeCompare(b.name)); // Sort items by name
       onChange(items); // Notify parent component of changes
     }
   };
@@ -185,8 +185,8 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
                       ${categoryColors[item.category]?.base || ""} 
                       ${categoryColors[item.category]?.hover || ""}`}
                   >
-                    <h3 className="font-medium">{item.name}</h3>
-                    <p className="text-sm text-gray-600">{item.description}</p>
+                    <h3 className="font-medium" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.name) }} />
+                    <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.description) }} />
                     <p className="text-xs text-gray-500">{item.location}</p>
                   </button>
                   <button
@@ -196,7 +196,7 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
                   >
                     <FiEdit />
                   </button>
-                  <button
+                  {/* <button
                     onClick={(e) => {
                       e.stopPropagation();
                       if (window.confirm("Are you sure you want to delete this item? This action cannot be undone.")) {
@@ -207,7 +207,7 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
                     tabIndex={-1}
                   >
                     <FiX />
-                  </button>
+                  </button> */}
                 </div>
               </li>
             ))

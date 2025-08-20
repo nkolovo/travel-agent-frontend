@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, act } from "react";
 import type { Activity, Item } from "./types/types"; // Importing Item type for TypeScript
 import { FaTimes, FaBold, FaItalic, FaLink } from "react-icons/fa";
-import "./../styles/itemModal.css"; // Importing CSS for modal styling
-import { it } from "node:test";
+import "./../styles/itemModal.css";
 
 interface ItemModalProps {
     isOpen: boolean; // Prop to control modal visibility
@@ -13,11 +12,11 @@ interface ItemModalProps {
 }
 
 const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModalActivity, item, activity }) => {
-    const [country, setCountry] = useState(item?.country || "Greece"); // Default country if not provided
-    const [location, setLocation] = useState(item?.location || ""); // Default location if not provided
-    const [title, setTitle] = useState(item?.name || "");
-    const [description, setDescription] = useState(item?.description || "");
-    const [category, setCategory] = useState(item?.category || "");
+    const [country, setCountry] = useState(item?.country || activity?.country || "Greece"); // Default country if not provided
+    const [location, setLocation] = useState(item?.location || activity?.location || "");
+    const [title, setTitle] = useState(item?.name || activity?.name || "");
+    const [description, setDescription] = useState(item?.description || activity?.description || "");
+    const [category, setCategory] = useState(item?.category || activity?.category || "Activity");
     const [activeFormats, setActiveFormats] = useState<string[]>([]); // Track active formatting buttons
     const notesRef = useRef<HTMLDivElement>(null); // Reference to the contenteditable div
     const titleRef = useRef<HTMLDivElement>(null); // Reference to the contenteditable title div
@@ -87,9 +86,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
 
     // Add event listener for selection changes
     useEffect(() => {
-        if (item) {
-            titleRef.current!.innerText = item!.name;
-            notesRef.current!.innerText = item!.description;
+        if (item || activity) {
+            titleRef.current!.innerHTML = item ? item.name : activity!.name;
+            notesRef.current!.innerHTML = item ? item.description : activity!.description;
         }
         document.addEventListener("selectionchange", handleSelectionChange);
         return () => {
@@ -104,6 +103,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         }
 
         let objectToSave: Item | Activity;
+        let isActivity = false;
         if (item && !activity) { // If editing an existing item
             objectToSave = {
                 ...item,
@@ -112,8 +112,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 category,
                 name: title,
                 description
-            };
+            } as Item;
         } else if (activity && !item) { // If editing an existing activity
+            isActivity = true;
             objectToSave = {
                 ...activity,
                 country,
@@ -121,7 +122,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 category,
                 name: title,
                 description
-            };
+            } as Activity;
         } else {
             objectToSave = {
                 country,
@@ -132,19 +133,36 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             } as Item;
         }
 
-        await fetch(`http://localhost:8080/api/items/save`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify(objectToSave),
-        })
-            .then(res => {
-                if (!res.ok)
-                    throw new Error(`Request error: ${res.status}`);
+        if (isActivity)
+            await fetch(`http://localhost:8080/api/dates/saveDateItem/${activity!.date.id}/item/${activity!.item.id}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify(objectToSave),
             })
-            .catch(error => { console.warn(objectToSave), console.warn("Error saving changes to item ", error) })
+                .then(async res => {
+                    if (!res.ok)
+                        throw new Error(`Request error: ${res.status}`);
+                })
+                .catch(error => { console.warn(objectToSave), console.warn("Error saving changes to activity. ", error) })
+        else
+            await fetch(`http://localhost:8080/api/items/save`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify(objectToSave),
+            })
+                .then(async res => {
+                    if (!res.ok)
+                        throw new Error(`Request error: ${res.status}`);
+                    const id = await res.json();
+                    objectToSave.id = id;
+                })
+                .catch(error => { console.warn(objectToSave), console.warn("Error saving changes to item ", error) })
 
         if (closeModalItem)
             closeModalItem(objectToSave as Item);
@@ -220,7 +238,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 suppressContentEditableWarning
                                 onInput={(e) => {
                                     // Update the description state with the current content
-                                    setTitle((e.target as HTMLDivElement).innerText);
+                                    setTitle((e.target as HTMLDivElement).innerHTML);
                                 }}
                             >
                             </div>
@@ -270,7 +288,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 suppressContentEditableWarning
                                 onInput={(e) => {
                                     // Update the description state with the current content
-                                    setDescription((e.target as HTMLDivElement).innerText);
+                                    setDescription((e.target as HTMLDivElement).innerHTML);
                                 }}
                             >
                             </div>
