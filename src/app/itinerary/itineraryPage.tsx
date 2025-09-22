@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 
 import type { Date, Activity, Item } from "./types/types";
 
@@ -10,8 +9,7 @@ import DateList from "./dates";
 import DateSummary from "./summary";
 import ItemList from "./items";
 
-export default function ItineraryPage() {
-    const searchParams = useSearchParams();
+export default function ItineraryPage({ id }: { id: string }) {
     const [itineraryId, setItineraryId] = useState<number>();
     const [dates, setDates] = useState<Date[]>([])
     const [selectedDate, setSelectedDate] = useState<Date>();
@@ -19,7 +17,6 @@ export default function ItineraryPage() {
     const [items, setItems] = useState<Item[]>([]);
 
     useEffect(() => {
-        console.log("Rerendered");
         const fetchItems = async () => {
             await fetch('http://localhost:8080/api/items', {
                 method: "GET",
@@ -42,7 +39,6 @@ export default function ItineraryPage() {
         }
 
         const fetchItineraryInfo = async () => {
-            var id = Number(searchParams.get('id'));
             await fetch(`http://localhost:8080/api/itineraries/${id}`, {
                 method: "GET",
                 headers: {

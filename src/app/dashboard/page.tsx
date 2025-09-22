@@ -177,7 +177,6 @@ export default function Dashboard() {
       const result = await response.json();
       const itineraryId = result.id;
       const queryString = new URLSearchParams({
-        id: itineraryId,
         agent: newItinerary.agent,
         createdDate: newItinerary.createdDate,
         reservationNumber: newItinerary.reservationNumber,
@@ -185,7 +184,7 @@ export default function Dashboard() {
         numTravelers: newItinerary.numTravelers.toString(),
       }).toString();
 
-      router.push(`/itinerary?${queryString}`);
+      router.push(`/itinerary/${itineraryId}?${queryString}`);
     } else {
       console.error("Error creating itinerary");
     }
@@ -204,7 +203,7 @@ export default function Dashboard() {
       leadName: itinerary.leadName,
       numTravelers: itinerary.numTravelers.toString(),
     }).toString();
-    router.push(`/itinerary?id=${itinerary.id}&${queryString}`);
+    router.push(`/itinerary/${itinerary.id}?${queryString}`);
   }
 
   return (
