@@ -18,7 +18,7 @@ export default function ItineraryPage({ id }: { id: string }) {
 
     useEffect(() => {
         const fetchItems = async () => {
-            await fetch('http://localhost:8080/api/items', {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -39,7 +39,7 @@ export default function ItineraryPage({ id }: { id: string }) {
         }
 
         const fetchItineraryInfo = async () => {
-            await fetch(`http://localhost:8080/api/itineraries/${id}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/${id}`, {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${localStorage.getItem("token")}`,
@@ -71,7 +71,7 @@ export default function ItineraryPage({ id }: { id: string }) {
         if (date === selectedDate)
             return;
         setSelectedDate(date);
-        fetch(`http://localhost:8080/api/dates/items/${date?.id}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/items/${date?.id}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -117,7 +117,7 @@ export default function ItineraryPage({ id }: { id: string }) {
             setSelectedDate(undefined);
             setActivities([]); // Clear activities when date is removed
         }
-        fetch(`http://localhost:8080/api/itineraries/remove/date/${date.id}/${itineraryId}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/remove/date/${date.id}/${itineraryId}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -163,7 +163,7 @@ export default function ItineraryPage({ id }: { id: string }) {
     };
 
     const saveItemToDate = (item: Item) => {
-        fetch(`http://localhost:8080/api/dates/add/${selectedDate!.id}/item/${item.id}/priority/${item.priority}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/add/${selectedDate!.id}/item/${item.id}/priority/${item.priority}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -178,7 +178,7 @@ export default function ItineraryPage({ id }: { id: string }) {
     }
 
     const saveActivityToDate = (activity: Activity) => {
-        fetch(`http://localhost:8080/api/dates/saveDateItem/${activity.date.id}/item/${activity.item.id}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/saveDateItem/${activity.date.id}/item/${activity.item.id}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

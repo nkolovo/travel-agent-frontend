@@ -59,7 +59,7 @@ export default function Dashboard() {
     if (token) {
       fetchItineraries();
 
-      fetch("http://localhost:8080/api/itineraries/latest-reservation", {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/latest-reservation`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`,
@@ -75,7 +75,7 @@ export default function Dashboard() {
   }, [router]);
 
   const fetchItineraries = async () => {
-    let url = "http://localhost:8080/api/itineraries";
+    let url = `${process.env.NEXT_PUBLIC_API_URL}/api/itineraries`;
 
     // Add filters if they exist
     if (filters.reservationNumber || filters.leadName) {
@@ -164,7 +164,7 @@ export default function Dashboard() {
       client: newItinerary.leadName,
     };
 
-    const response = await fetch("http://localhost:8080/api/itineraries/create", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

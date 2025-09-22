@@ -134,7 +134,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         }
 
         if (isActivity)
-            await fetch(`http://localhost:8080/api/dates/saveDateItem/${activity!.date.id}/item/${activity!.item.id}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/saveDateItem/${activity!.date.id}/item/${activity!.item.id}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -148,7 +148,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 })
                 .catch(error => { console.warn(objectToSave), console.warn("Error saving changes to activity. ", error) })
         else
-            await fetch(`http://localhost:8080/api/items/save`, {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items/save`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

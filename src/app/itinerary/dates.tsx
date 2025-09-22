@@ -19,7 +19,7 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
 
   const handleDateAdd = async (date: Date) => {
-    await fetch(`http://localhost:8080/api/itineraries/add/date/${itineraryId}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/add/date/${itineraryId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -42,7 +42,7 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
   }
 
   const saveChanges = async (date: Date) => {
-    await fetch(`http://localhost:8080/api/itineraries/update/date`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/update/date`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

@@ -24,7 +24,7 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
   const saveChanges = async () => {
     const updatedData = { itineraryId, title, tripCost, coverImage };
     try {
-      await fetch("http://localhost:8080/api/itineraries/update", {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/update`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -43,7 +43,7 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
 
   useEffect(() => {
     const fetchItinerary = async () => {
-      await fetch(`http://localhost:8080/api/itineraries/${itineraryId}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/${itineraryId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

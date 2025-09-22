@@ -24,7 +24,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
 
   const onRemoveItemFromDate = async (activity: Activity) => {
     // Remove the item from the list
-    await fetch(`http://localhost:8080/api/dates/remove/${date!.id}/item/${activity.item.id}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/remove/${date!.id}/item/${activity.item.id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

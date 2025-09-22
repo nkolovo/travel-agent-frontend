@@ -51,7 +51,7 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
 
   const onDeleteItem = async (item: Item) => {
     // Remove the item from the list
-    await fetch(`http://localhost:8080/api/items/remove/${item.id}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items/remove/${item.id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
