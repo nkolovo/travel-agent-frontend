@@ -1,5 +1,10 @@
+import { Suspense } from 'react';
 import ItineraryPageClient from './itineraryPage';
 
 export default function Page() {
-  return <ItineraryPageClient />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ItineraryPageClient />
+    </Suspense >
+  );
 }
