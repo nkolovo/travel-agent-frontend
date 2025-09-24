@@ -34,8 +34,7 @@ export interface Itinerary {
   tripPrice: number;
   status?: string;
   docsSent?: boolean;
-  image?: string | null;
-  imageType?: string;
+  coverImageUrl?: string;
   client: String;
   dates?: Date[] | null;
 }
@@ -55,6 +54,8 @@ export interface Item {
   name: string;
   description: string;
   priority?: number;
+  imageName?: string;
+  imageUrl?: string;
 }
 
 export interface Activity {
@@ -67,4 +68,6 @@ export interface Activity {
   name: string;
   description: string;
   priority: number;
+  imageName?: string;
+  imageUrl?: string;
 }

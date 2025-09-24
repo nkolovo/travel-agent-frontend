@@ -92,6 +92,8 @@ export default function ItineraryPage({ id }: { id: string }) {
                     country: activity.country,
                     location: activity.location,
                     category: activity.category,
+                    imageName: activity.imageName,
+                    imageUrl: activity.imageUrl,
                     priority: activity.priority,
                 })));
             })
@@ -152,6 +154,7 @@ export default function ItineraryPage({ id }: { id: string }) {
             country: item.country,
             location: item.location,
             category: item.category,
+            imageName: item.imageName,
             priority: activities.length > 0
                 ? Math.max(...activities.map(a => a.priority ?? 0)) + 1
                 : 1,

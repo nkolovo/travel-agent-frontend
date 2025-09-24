@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, act } from "react";
 import type { Activity, Item } from "./types/types"; // Importing Item type for TypeScript
 import { FaTimes, FaBold, FaItalic, FaLink } from "react-icons/fa";
 import "./../styles/itemModal.css";
+import { FiCamera } from "react-icons/fi";
 
 interface ItemModalProps {
     isOpen: boolean; // Prop to control modal visibility
@@ -17,9 +18,11 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     const [title, setTitle] = useState(item?.name || activity?.name || "");
     const [description, setDescription] = useState(item?.description || activity?.description || "");
     const [category, setCategory] = useState(item?.category || activity?.category || "Activity");
+    const [image, setImage] = useState(item?.imageUrl || activity?.imageUrl || "");
+    const [imageName, setImageName] = useState(item?.imageName || activity?.imageName || "");
     const [activeFormats, setActiveFormats] = useState<string[]>([]); // Track active formatting buttons
-    const notesRef = useRef<HTMLDivElement>(null); // Reference to the contenteditable div
-    const titleRef = useRef<HTMLDivElement>(null); // Reference to the contenteditable title div
+    const notesRef = useRef<HTMLDivElement>(null);
+    const titleRef = useRef<HTMLDivElement>(null);
 
     if (!isOpen) return null; // Do not render if isOpen is false
 
@@ -89,6 +92,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         if (item || activity) {
             titleRef.current!.innerHTML = item ? item.name : activity!.name;
             notesRef.current!.innerHTML = item ? item.description : activity!.description;
+            if (item?.imageName || activity?.imageName)
+                loadImageFromGCS();
+
         }
         document.addEventListener("selectionchange", handleSelectionChange);
         return () => {
@@ -111,7 +117,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 location,
                 category,
                 name: title,
-                description
+                description,
+                imageName
             } as Item;
         } else if (activity && !item) { // If editing an existing activity
             isActivity = true;
@@ -121,7 +128,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 location,
                 category,
                 name: title,
-                description
+                description,
+                imageName
             } as Activity;
         } else {
             objectToSave = {
@@ -129,7 +137,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 location,
                 category,
                 name: title,
-                description
+                description,
+                imageName
             } as Item;
         }
 
@@ -168,6 +177,37 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             closeModalItem(objectToSave as Item);
         else if (closeModalActivity)
             closeModalActivity(objectToSave as Activity);
+    }
+
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImage(reader.result as string); // Set the cover image state
+            };
+            reader.readAsDataURL(file);
+            setImageName(file.name);
+        }
+    }
+
+    const loadImageFromGCS = async () => {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/images/signed-url/${imageName}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+        })
+            .then(res => {
+                if (!res.ok)
+                    throw new Error(`Request error: ${res.status}`);
+                return res.text();
+            })
+            .then(signedUrl => {
+                setImage(signedUrl);
+            })
+            .catch(error => { console.warn(), console.warn("Error retrieving the image. ", error) })
     }
 
     return (
@@ -292,6 +332,41 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 }}
                             >
                             </div>
+                        </div>
+                    </div>
+                    {/* Image Row */}
+                    <div className="modal-row">
+                        <span className="modal-row-label">Image</span>
+                        <div
+                            className="modal-row-content"
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "flex-start",
+                                gap: "1rem"
+                            }}
+                        >
+                            {/* Add/Change Item/Activity Photo Button */}
+                            <button onClick={() => document.getElementById("item-image-input")?.click()}>
+                                <FiCamera className="text-gray-700 text-2xl" />
+                            </button>
+
+                            {/* Hidden File Input */}
+                            <input
+                                id="item-image-input"
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleImageUpload}
+                            />
+                            {/* Show image below the button if it exists */}
+                            {image && (
+                                <img
+                                    src={image}
+                                    alt="Item"
+                                    style={{ maxWidth: "900px", maxHeight: "900px", borderRadius: "8px" }}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>

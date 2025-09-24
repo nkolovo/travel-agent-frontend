@@ -49,30 +49,30 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
     setIsModalOpen(true); // Open the modal for editing
   };
 
-  const onDeleteItem = async (item: Item) => {
-    // Remove the item from the list
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items/remove/${item.id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then(res => {
-        if (!res.ok)
-          throw new Error(`Request error: ${res.status}`);
-        return res.status
-      })
-      .then(res => {
-        if (res !== 200) {
-          throw new Error(`Error deleting item: ${res}`);
-        }
-        // Remove the item from the local state
-        items = items.filter(i => i.id !== item.id);
-        onChange(items); // Notify parent component of changes
-      })
-      .catch(error => { console.warn(item), console.warn("Error deleting item.", error) })
-  }
+  // const onDeleteItem = async (item: Item) => {
+  //   // Remove the item from the list
+  //   await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items/remove/${item.id}`, {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       "Authorization": `Bearer ${localStorage.getItem("token")}`,
+  //     },
+  //   })
+  //     .then(res => {
+  //       if (!res.ok)
+  //         throw new Error(`Request error: ${res.status}`);
+  //       return res.status
+  //     })
+  //     .then(res => {
+  //       if (res !== 200) {
+  //         throw new Error(`Error deleting item: ${res}`);
+  //       }
+  //       // Remove the item from the local state
+  //       items = items.filter(i => i.id !== item.id);
+  //       onChange(items); // Notify parent component of changes
+  //     })
+  //     .catch(error => { console.warn(item), console.warn("Error deleting item.", error) })
+  // }
 
   const closeModal = (item?: Item) => {
     setIsModalOpen(false); // Close the modal

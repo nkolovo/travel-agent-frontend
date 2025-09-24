@@ -22,7 +22,7 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
   const prevCoverImage = useRef(coverImage);
 
   const saveChanges = async () => {
-    const updatedData = { itineraryId, title, tripCost, coverImage };
+    const updatedData = { itineraryId, title, tripCost };
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/update`, {
         method: "PATCH",
@@ -35,7 +35,6 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
       // Update previous values after a successful save
       prevTitle.current = title;
       prevTripCost.current = tripCost;
-      prevCoverImage.current = coverImage;
     } catch (error) {
       console.error("Error saving changes:", error);
     }
@@ -60,10 +59,9 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
           setItinerary(data)
           setTitle(data.name ?? title)
           setTripCost(data.tripPrice ?? tripCost)
-          setCoverImage(data.image ?? coverImage)
+          setCoverImage(data.coverImageUrl ?? "")
           prevTitle.current = data.name ?? title;
           prevTripCost.current = data.tripPrice ?? tripCost;
-          prevCoverImage.current = data.image ?? coverImage;
         }).catch(error => console.error("Error fetching itinerary:", error))
     };
 
@@ -80,8 +78,7 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
     const timeout = setTimeout(() => {
       if (
         (title !== prevTitle.current ||
-          tripCost !== prevTripCost.current ||
-          coverImage !== prevCoverImage.current) && !isEditing
+          tripCost !== prevTripCost.current) && !isEditing
       )
         saveChanges();
     }, 1000);
@@ -91,11 +88,34 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
   const handleCoverImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      uploadCoverImage(file);
+    }
+  };
+
+  const uploadCoverImage = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/${itineraryId}/upload-image`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            // Do NOT set Content-Type for FormData
+          },
+          body: formData,
+        }
+      );
+      if (!response.ok) throw new Error("Image upload failed");
       const reader = new FileReader();
       reader.onloadend = () => {
         setCoverImage(reader.result as string); // Set the cover image state
       };
       reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Error uploading image:", error);
     }
   };
 
