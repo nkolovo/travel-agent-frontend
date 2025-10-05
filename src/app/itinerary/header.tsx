@@ -19,7 +19,6 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
   const isFirstRender = useRef(true);
   const prevTitle = useRef(title);
   const prevTripCost = useRef(tripCost);
-  const prevCoverImage = useRef(coverImage);
 
   const saveChanges = async () => {
     const updatedData = { itineraryId, title, tripCost };
