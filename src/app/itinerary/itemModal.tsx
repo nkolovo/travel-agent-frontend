@@ -278,7 +278,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 suppressContentEditableWarning
                                 onInput={(e) => {
                                     // Update the description state with the current content
-                                    setTitle((e.target as HTMLDivElement).innerHTML);
+                                    let html = (e.target as HTMLDivElement).innerHTML;
+                                    html = html.replace("&amp;", "&#38;");
+                                    setTitle(html);
                                 }}
                             >
                             </div>
@@ -327,8 +329,11 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 contentEditable
                                 suppressContentEditableWarning
                                 onInput={(e) => {
-                                    // Update the description state with the current content
-                                    setDescription((e.target as HTMLDivElement).innerHTML);
+                                    // Get the HTML content
+                                    let html = (e.target as HTMLDivElement).innerHTML;
+                                    html = html.replace(/<br>/g, "<br />");
+                                    html = html.replace("&amp;", "&#38;");
+                                    setDescription(html);
                                 }}
                             >
                             </div>
