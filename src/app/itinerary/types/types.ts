@@ -32,6 +32,7 @@ export interface Itinerary {
   arrivalDate?: string;
   departureDate?: string;
   tripPrice: number;
+  netPrice: number;
   status?: string;
   docsSent?: boolean;
   coverImageUrl?: string;
@@ -53,6 +54,8 @@ export interface Item {
   category: string;
   name: string;
   description: string;
+  retailPrice?: number;
+  netPrice?: number;
   priority?: number;
   imageName?: string;
   imageUrl?: string;
@@ -67,6 +70,8 @@ export interface Activity {
   category: string;
   name: string;
   description: string;
+  retailPrice?: number;
+  netPrice?: number;
   priority: number;
   imageName?: string;
   imageUrl?: string;

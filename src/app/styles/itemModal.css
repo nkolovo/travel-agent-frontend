@@ -112,7 +112,9 @@
 }
 
 .title-textarea,
-.notes-textarea {
+.notes-textarea,
+.retail-price-textarea,
+.net-price-textarea {
   width: 100%;
   min-height: 40px;
   border: 1px solid #ccc;

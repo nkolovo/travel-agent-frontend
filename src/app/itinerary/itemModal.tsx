@@ -15,14 +15,18 @@ interface ItemModalProps {
 const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModalActivity, item, activity }) => {
     const [country, setCountry] = useState(item?.country || activity?.country || "Greece"); // Default country if not provided
     const [location, setLocation] = useState(item?.location || activity?.location || "");
+    const [category, setCategory] = useState(item?.category || activity?.category || "Activity");
     const [title, setTitle] = useState(item?.name || activity?.name || "");
     const [description, setDescription] = useState(item?.description || activity?.description || "");
-    const [category, setCategory] = useState(item?.category || activity?.category || "Activity");
+    const [retailPrice, setRetailPrice] = useState(item?.retailPrice || activity?.retailPrice || 0);
+    const [netPrice, setNetPrice] = useState(item?.netPrice || activity?.netPrice || 0);
     const [image, setImage] = useState(item?.imageUrl || activity?.imageUrl || "");
     const [imageName, setImageName] = useState(item?.imageName || activity?.imageName || "");
-    const [activeFormats, setActiveFormats] = useState<string[]>([]); // Track active formatting buttons
+    const [activeFormats, setActiveFormats] = useState<string[]>([]);
     const notesRef = useRef<HTMLDivElement>(null);
     const titleRef = useRef<HTMLDivElement>(null);
+    const retailPriceRef = useRef<HTMLDivElement>(null);
+    const netPriceRef = useRef<HTMLDivElement>(null);
 
     if (!isOpen) return null; // Do not render if isOpen is false
 
@@ -92,6 +96,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         if (item || activity) {
             titleRef.current!.innerHTML = item ? item.name : activity!.name;
             notesRef.current!.innerHTML = item ? item.description : activity!.description;
+            retailPriceRef.current!.innerHTML = String(item ? item.retailPrice ?? "0" : activity?.retailPrice ?? "0");
+            netPriceRef.current!.innerHTML = String(item ? item.netPrice ?? "0" : activity?.netPrice ?? "0");
             if (item?.imageName || activity?.imageName)
                 loadImageFromGCS();
 
@@ -118,6 +124,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 category,
                 name: title,
                 description,
+                retailPrice,
+                netPrice,
                 imageName
             } as Item;
         } else if (activity && !item) { // If editing an existing activity
@@ -129,6 +137,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 category,
                 name: title,
                 description,
+                retailPrice,
+                netPrice,
                 imageName
             } as Activity;
         } else {
@@ -138,6 +148,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 category,
                 name: title,
                 description,
+                retailPrice,
+                netPrice,
                 imageName
             } as Item;
         }
@@ -266,7 +278,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                             ))}
                         </div>
                     </div>
-
                     {/* Title Row */}
                     <div className="modal-row">
                         <span className="modal-row-label">Title</span>
@@ -277,7 +288,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 contentEditable
                                 suppressContentEditableWarning
                                 onInput={(e) => {
-                                    // Update the description state with the current content
+                                    // Update the state with the current content
                                     let html = (e.target as HTMLDivElement).innerHTML;
                                     html = html.replace("&amp;", "&#38;");
                                     setTitle(html);
@@ -286,7 +297,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                             </div>
                         </div>
                     </div>
-
                     {/* Notes Row */}
                     <div className="modal-row">
                         <span className="modal-row-label">Notes</span>
@@ -334,6 +344,38 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                     html = html.replace(/<br>/g, "<br />");
                                     html = html.replace("&amp;", "&#38;");
                                     setDescription(html);
+                                }}
+                            >
+                            </div>
+                        </div>
+                    </div>
+                    {/* Retail Price Row */}
+                    <div className="modal-row">
+                        <span className="modal-row-label">Retail Price</span>
+                        <div className="modal-row-content">
+                            <div
+                                ref={retailPriceRef}
+                                className="retail-price-textarea"
+                                contentEditable
+                                suppressContentEditableWarning
+                                onInput={(e) => {
+                                    setRetailPrice(Number((e.target as HTMLDivElement).innerHTML));
+                                }}
+                            >
+                            </div>
+                        </div>
+                    </div>
+                    {/* Net Price Row */}
+                    <div className="modal-row">
+                        <span className="modal-row-label">Net Price</span>
+                        <div className="modal-row-content">
+                            <div
+                                ref={netPriceRef}
+                                className="net-price-textarea"
+                                contentEditable
+                                suppressContentEditableWarning
+                                onInput={(e) => {
+                                    setNetPrice(Number((e.target as HTMLDivElement).innerHTML));
                                 }}
                             >
                             </div>

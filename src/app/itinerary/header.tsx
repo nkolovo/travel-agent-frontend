@@ -1,27 +1,25 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { FiEdit, FiCamera } from "react-icons/fi"; // Importing icons
-import { Itinerary } from "./types/types";
+import { FiEdit, FiCamera } from "react-icons/fi";
 
 export default function Header({ itineraryId }: { itineraryId: number }) {
   const [itineraryLoaded, setItineraryLoaded] = useState<boolean>(false);
-  const [itinerary, setItinerary] = useState<Itinerary>();
   const [coverImage, setCoverImage] = useState<string>("");
 
   // States to track current values
   const [title, setTitle] = useState<string>("Insert Title Here");
-  const [originalTitle, setOriginalTitle] = useState<string>("Insert Title Here"); // For when a user cancels their title edit
+  const [originalTitle, setOriginalTitle] = useState<string>("Insert Title Here");
   const [tripCost, setTripCost] = useState<number>(0);
+  const [netCost, setNetCost] = useState<number>(0);
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
   // Refs to track previous values
   const isFirstRender = useRef(true);
   const prevTitle = useRef(title);
-  const prevTripCost = useRef(tripCost);
 
   const saveChanges = async () => {
-    const updatedData = { itineraryId, title, tripCost };
+    const updatedData = { itineraryId, title, tripCost, netCost };
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/update`, {
         method: "PATCH",
@@ -33,7 +31,6 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
       });
       // Update previous values after a successful save
       prevTitle.current = title;
-      prevTripCost.current = tripCost;
     } catch (error) {
       console.error("Error saving changes:", error);
     }
@@ -55,12 +52,11 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
         })
         .then(data => {
           setItineraryLoaded(true);
-          setItinerary(data)
           setTitle(data.name ?? title)
           setTripCost(data.tripPrice ?? tripCost)
+          setNetCost(data.netPrice ?? netCost)
           setCoverImage(data.coverImageUrl ?? "")
           prevTitle.current = data.name ?? title;
-          prevTripCost.current = data.tripPrice ?? tripCost;
         }).catch(error => console.error("Error fetching itinerary:", error))
     };
 
@@ -75,14 +71,11 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
     }
 
     const timeout = setTimeout(() => {
-      if (
-        (title !== prevTitle.current ||
-          tripCost !== prevTripCost.current) && !isEditing
-      )
+      if ((title !== prevTitle.current) && !isEditing)
         saveChanges();
     }, 1000);
     return () => clearTimeout(timeout);
-  }, [title, tripCost, coverImage, isEditing, itineraryLoaded]);
+  }, [title, coverImage, isEditing, itineraryLoaded]);
 
   const handleCoverImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -120,6 +113,10 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(event.target.value);
+  };
+
+  const handleNetCostChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setNetCost(Number(event.target.value));
   };
 
   const toggleEditMode = () => {
@@ -197,6 +194,11 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
       {/* Total Trip Cost (Under Title) */}
       <p className="absolute top-16 left-6 text-white text-xl drop-shadow-md">
         Total Cost: €{tripCost.toLocaleString()}
+      </p>
+
+      {/* Total Trip Cost (Under Title) */}
+      <p className="absolute top-24 left-6 text-white text-xl drop-shadow-md">
+        Net Cost: €{netCost.toLocaleString()}
       </p>
 
       {/* Change Cover Photo Button (Bottom Right) */}

@@ -87,11 +87,13 @@ export default function ItineraryPage({ id }: { id: string }) {
                 setActivities(activities.map((activity: Activity) => ({
                     date: date,
                     item: activity.item,
-                    name: activity.name,
-                    description: activity.description,
                     country: activity.country,
                     location: activity.location,
                     category: activity.category,
+                    name: activity.name,
+                    description: activity.description,
+                    retailPrice: activity.retailPrice,
+                    netPrice: activity.netPrice,
                     imageName: activity.imageName,
                     imageUrl: activity.imageUrl,
                     priority: activity.priority,
@@ -149,11 +151,13 @@ export default function ItineraryPage({ id }: { id: string }) {
         const newActivity: Activity = {
             date: selectedDate,
             item: item,
-            name: item.name,
-            description: item.description,
             country: item.country,
             location: item.location,
             category: item.category,
+            name: item.name,
+            description: item.description,
+            retailPrice: item.retailPrice,
+            netPrice: item.netPrice,
             imageName: item.imageName,
             priority: activities.length > 0
                 ? Math.max(...activities.map(a => a.priority ?? 0)) + 1

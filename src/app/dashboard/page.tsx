@@ -19,6 +19,7 @@ const columnMapping: Record<string, keyof Itinerary> = {
   "Arrival Date": "arrivalDate",
   "Departure Date": "departureDate",
   "Trip Price": "tripPrice",
+  "Net Price": "netPrice",
   "Status": "status",
   "Travel Docs Sent": "docsSent",
 };
@@ -160,6 +161,7 @@ export default function Dashboard() {
       leadName: newItinerary.leadName,
       numTravelers: newItinerary.numTravelers,
       tripPrice: 0,
+      netPrice: 0,
       status: "Proposal",
       client: newItinerary.leadName,
     };
