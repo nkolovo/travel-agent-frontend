@@ -188,8 +188,8 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
                     <h3 className="font-medium" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.name) }} />
                     <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.description) }} />
                     <p className="text-xs text-gray-500">{item.location}</p>
-                    <p className="text-xs text-gray-700">Retail Price: {item.retailPrice !== 0 ? item.retailPrice : "N/A"}</p>
-                    <p className="text-xs text-gray-500">Net Price: {item.netPrice !== 0 ? item.netPrice : "N/A"}</p>
+                    <p className="text-xs text-gray-700">Retail Price: {item.retailPrice > 0 ? item.retailPrice : "N/A"}</p>
+                    <p className="text-xs text-gray-500">Net Price: {item.netPrice > 0 ? item.netPrice : "N/A"}</p>
                   </button>
                   <button
                     onClick={() => onItemEdit(item)}

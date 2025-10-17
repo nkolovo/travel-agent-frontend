@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import type { Date } from './types/types';
 import { Activity } from './types/types';
-import { FaCalendarAlt } from "react-icons/fa";
+import { FaCalendarAlt, FaPlaneArrival, FaPlaneDeparture } from "react-icons/fa";
 import { FiEdit, FiX } from 'react-icons/fi';
 import ItemModal from './itemModal';
 import DOMPurify from "dompurify";
@@ -41,10 +41,10 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
           throw new Error(`Error deleting item: ${res}`);
         }
         // Remove the item from the local state
-        activities = activities.filter(a => a.item.id !== activity.item.id);
-        onChange(activities); // Notify parent component of changes
+        const updated = activities.filter(a => a.item.id !== activity.item.id);
+        onChange(updated); // Notify parent component of changes
       })
-      .catch(error => { console.warn(activity), console.warn("Error deleting item.", error) })
+      .catch(error => { console.warn(activity); console.warn("Error deleting item.", error) })
   }
 
   const closeModal = (activity?: Activity) => {
@@ -52,9 +52,10 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
     if (activity) {
       const index = activities.findIndex(a => a.item.id === activity.item.id);
       if (index !== -1) {
-        activities[index] = activity; // Replace existing activity
+        const updated = [...activities];
+        updated[index] = activity; // Replace existing activity
+        onChange(updated); // Notify parent component of changes
       }
-      onChange(activities); // Notify parent component of changes
     }
   };
 
@@ -96,7 +97,8 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
 
         {/* Name */}
         <div className="flex items-center space-x-2 text-lg font-semibold text-gray-700">
-          {/* <FaPlaneArrival className="text-green-500" /> */}
+          {(date?.name.includes("Arrival") || date?.name.includes("Flight")) && <FaPlaneArrival className="text-teal-500" />}
+          {date?.name.includes("Departure") && <FaPlaneDeparture className="text-orange-500" />}
           <span>{date?.name}</span>
         </div>
       </div>
@@ -108,16 +110,21 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="activities">
             {(provided) => (
-              <div ref={provided.innerRef} {...provided.droppableProps}>
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="flex-1 min-h-0 overflow-y-auto"
+              >
                 {activities.length > 0 ? (
                   activities.map((activity, index) => (
                     <Draggable key={activity.item.id} draggableId={activity.item!.id!.toString()} index={index}>
-                      {(provided) => (
+                      {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
-                          className='mb-4 p-4 bg-gray-100 rounded shadow-sm cursor-move'
+                          className={`mb-4 p-4 rounded shadow-sm ${snapshot.isDragging ? 'bg-blue-200 ring-2 ring-blue-300' : 'bg-gray-100'}`}
+                          style={{ ...provided.draggableProps.style }}
                         >
                           {/* Heading row: h2 and X button */}
                           <div className="flex items-center justify-between">
@@ -148,8 +155,8 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
                               {/* Description */}
                               <p className='text-gray-600' dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activity.description) }} />
                             </div>
-                            <p className="text-xs text-gray-700">Retail Price: {activity.retailPrice !== 0 ? activity.retailPrice : "N/A"}</p>
-                            <p className="text-xs text-gray-700">Net Price: {activity.netPrice !== 0 ? activity.netPrice : "N/A"}</p>
+                            <p className="text-xs text-gray-700">Retail Price: {activity.retailPrice > 0 ? activity.retailPrice : "N/A"}</p>
+                            <p className="text-xs text-gray-700">Net Price: {activity.netPrice > 0 ? activity.netPrice : "N/A"}</p>
                           </div>
                         </div>
                       )}

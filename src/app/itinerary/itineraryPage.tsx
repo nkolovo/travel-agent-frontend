@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, act } from "react";
 
 import type { Date, Activity, Item } from "./types/types";
 
@@ -11,6 +11,8 @@ import ItemList from "./items";
 
 export default function ItineraryPage({ id }: { id: string }) {
     const [itineraryId, setItineraryId] = useState<number>();
+    const [itineraryTripCost, setItineraryTripCost] = useState<number>(0);
+    const [itineraryNetCost, setItineraryNetCost] = useState<number>(0);
     const [dates, setDates] = useState<Date[]>([])
     const [selectedDate, setSelectedDate] = useState<Date>();
     const [activities, setActivities] = useState<Activity[]>([]);
@@ -53,6 +55,9 @@ export default function ItineraryPage({ id }: { id: string }) {
                 })
                 .then(itinerary => {
                     setItineraryId(itinerary.id);
+                    console.log("Itinerary costs fetched:", { tripCost: itinerary.tripCost, netCost: itinerary.netCost });
+                    setItineraryTripCost(itinerary.tripPrice);
+                    setItineraryNetCost(itinerary.netPrice);
                     itinerary.dates.sort((a: Date, b: Date) => {
                         // Comparing dates (a.date and b.date are strings in ISO format)
                         return new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -119,7 +124,7 @@ export default function ItineraryPage({ id }: { id: string }) {
     const handleRemoveDate = (date: Date) => {
         if (date === selectedDate) {
             setSelectedDate(undefined);
-            setActivities([]); // Clear activities when date is removed
+            setActivities([]);
         }
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/remove/date/${date.id}/${itineraryId}`, {
             method: "POST",
@@ -134,6 +139,12 @@ export default function ItineraryPage({ id }: { id: string }) {
             })
             .then(() => { setDates(dates.filter(d => date.id !== d.id)) })
             .catch(error => console.error("Error saving changes:", error))
+
+        // If the date was removed, update the itinerary costs if any activities had prices
+        const removedActivities = activities.filter(activity => activity.date.id === date.id);
+        const totalRetailPrice = removedActivities.reduce((sum, activity) => sum + activity.retailPrice, 0);
+        const totalNetPrice = removedActivities.reduce((sum, activity) => sum + activity.netPrice, 0);
+        handlePriceChange(-totalRetailPrice, -totalNetPrice);
     }
 
     const handleSelectItem = (item: Item) => {
@@ -164,7 +175,11 @@ export default function ItineraryPage({ id }: { id: string }) {
                 : 1,
         };
 
-        item.priority = newActivity.priority; // Update item priority
+        if (item.retailPrice > 0 || item.netPrice > 0) {
+            handlePriceChange(item.retailPrice, item.netPrice);
+        }
+
+        item.priority = newActivity.priority;
         saveItemToDate(item);
         setActivities([...activities, newActivity]);
     };
@@ -201,21 +216,53 @@ export default function ItineraryPage({ id }: { id: string }) {
     }
 
     const handleActivityUpdate = (acts: Activity[]) => {
-        const changedActivity = acts.find(
-            act => {
-                const original = activities.find(a => a.item.id === act.item.id);
-                return original && JSON.stringify(act) !== JSON.stringify(original);
-            }
-        );
+        const origMap = new Map(activities.map(a => [a.item.id, a]));
+        const newMap = new Map(acts.map(a => [a.item.id, a]));
 
-        if (changedActivity) {
-            saveActivityToDate(changedActivity);
+        // removed = in orig but not in new
+        const removed = [...origMap.values()].filter(o => !newMap.has(o.item.id));
+        // added = in new but not in orig
+        const added = [...newMap.values()].filter(n => !origMap.has(n.item.id));
+        // changed = in both but different
+        const changed = [...newMap.values()].filter(n => {
+            const o = origMap.get(n.item.id);
+            return o && JSON.stringify(o) !== JSON.stringify(n);
+        });
+
+        // handle removals: subtract their prices
+        if (removed.length) {
+            const removedRetail = removed.reduce((s, a) => s + (a.retailPrice ?? 0), 0);
+            const removedNet = removed.reduce((s, a) => s + (a.netPrice ?? 0), 0);
+            if (removedRetail > 0 || removedNet > 0) handlePriceChange(-removedRetail, -removedNet);
         }
+
+        // handle additions: add their prices
+        if (added.length) {
+            const addedRetail = added.reduce((s, a) => s + (a.retailPrice ?? 0), 0);
+            const addedNet = added.reduce((s, a) => s + (a.netPrice ?? 0), 0);
+            if (addedRetail > 0 || addedNet > 0) handlePriceChange(addedRetail, addedNet);
+        }
+
+        // handle changes: apply per-item delta and persist
+        for (const updated of changed) {
+            const original = origMap.get(updated.item.id)!;
+            const deltaRetail = (updated.retailPrice ?? 0) - (original.retailPrice ?? 0);
+            const deltaNet = (updated.netPrice ?? 0) - (original.netPrice ?? 0);
+            console.log(deltaRetail, deltaNet);
+            if (deltaRetail !== 0 || deltaNet !== 0) handlePriceChange(deltaRetail, deltaNet);
+            saveActivityToDate(updated);
+        }
+
         setActivities(acts);
-    }
+    };
 
     const handleItemUpdate = (items: Item[]) => {
         setItems(items);
+    }
+
+    const handlePriceChange = (tripCost: number, netCost: number) => {
+        setItineraryTripCost(prev => prev + tripCost);
+        setItineraryNetCost(prev => prev + netCost);
     }
 
     return (
@@ -223,7 +270,7 @@ export default function ItineraryPage({ id }: { id: string }) {
             {itineraryId !== undefined &&
                 <div className="itinerary-section flex-1 overflow-hidden">
                     <div className="w-full">
-                        <Header itineraryId={itineraryId} />
+                        <Header itineraryId={itineraryId} retailPrice={itineraryTripCost} netPrice={itineraryNetCost} />
                     </div>
                     <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
                         <div className="h-[calc(100vh-20rem)] flex flex-col flex-1 overflow-hidden col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-3 xl:col-span-3 2xl:col-span-3">
@@ -237,7 +284,7 @@ export default function ItineraryPage({ id }: { id: string }) {
                             />
                         </div>
 
-                        <div className="col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-6 xl:col-span-6 2xl:col-span-6 flex flex-col overflow-y-auto">
+                        <div className="h-[calc(100vh-20rem)] flex flex-col flex-1 col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-6 xl:col-span-6 2xl:col-span-6 flex flex-col overflow-y-auto">
                             <DateSummary date={selectedDate} activities={activities} onChange={handleActivityUpdate} />
                         </div>
 

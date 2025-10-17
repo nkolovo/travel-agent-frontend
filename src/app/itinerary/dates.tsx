@@ -125,9 +125,8 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
               }
             }}
             className={`${addingIndex === index ? 'bg-gray-300 cursor-not-allowed opacity-60' : 'cursor-pointer'} p-4 rounded-lg mt-4 transition-all duration-200 ease-in-out shadow-md
-      ${selectedDate === date ? 'bg-blue-200' : 'hover:bg-gray-200'}`}
+                        ${selectedDate === date ? 'bg-blue-200' : 'hover:bg-gray-200'}`}
           >
-            {/* ...rest of your item... */}
             <div className="flex items-center justify-between w-full space-x-2">
               <div className="flex items-center space-x-2 flex-grow">
                 <input

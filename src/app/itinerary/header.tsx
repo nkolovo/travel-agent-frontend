@@ -3,15 +3,21 @@
 import { useEffect, useState, useRef } from "react";
 import { FiEdit, FiCamera } from "react-icons/fi";
 
-export default function Header({ itineraryId }: { itineraryId: number }) {
+interface HeaderProps {
+  itineraryId: number;
+  retailPrice: number;
+  netPrice: number;
+}
+
+export default function Header({ itineraryId, retailPrice, netPrice }: HeaderProps) {
   const [itineraryLoaded, setItineraryLoaded] = useState<boolean>(false);
   const [coverImage, setCoverImage] = useState<string>("");
 
   // States to track current values
   const [title, setTitle] = useState<string>("Insert Title Here");
   const [originalTitle, setOriginalTitle] = useState<string>("Insert Title Here");
-  const [tripCost, setTripCost] = useState<number>(0);
-  const [netCost, setNetCost] = useState<number>(0);
+  const [tripCost, setTripCost] = useState<number>(retailPrice);
+  const [netCost, setNetCost] = useState<number>(netPrice);
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
   // Refs to track previous values
@@ -35,6 +41,13 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
       console.error("Error saving changes:", error);
     }
   };
+
+  useEffect(() => {
+    if (!isEditing) {
+      setTripCost(retailPrice ?? 0);
+      setNetCost(netPrice ?? 0);
+    }
+  }, [retailPrice, netPrice]);
 
   useEffect(() => {
     const fetchItinerary = async () => {
@@ -95,7 +108,6 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${localStorage.getItem("token")}`,
-            // Do NOT set Content-Type for FormData
           },
           body: formData,
         }
@@ -103,7 +115,7 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
       if (!response.ok) throw new Error("Image upload failed");
       const reader = new FileReader();
       reader.onloadend = () => {
-        setCoverImage(reader.result as string); // Set the cover image state
+        setCoverImage(reader.result as string);
       };
       reader.readAsDataURL(file);
     } catch (error) {
@@ -113,10 +125,6 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(event.target.value);
-  };
-
-  const handleNetCostChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNetCost(Number(event.target.value));
   };
 
   const toggleEditMode = () => {
@@ -165,7 +173,7 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
             type="text"
             value={title}
             onChange={handleTitleChange}
-            onKeyDown={handleKeyDown} // Trigger save on "Enter"
+            onKeyDown={handleKeyDown}
             className="text-white text-3xl font-bold drop-shadow-md bg-transparent border-b-2 border-white focus:outline-none"
           />
         ) : (
@@ -193,12 +201,12 @@ export default function Header({ itineraryId }: { itineraryId: number }) {
 
       {/* Total Trip Cost (Under Title) */}
       <p className="absolute top-16 left-6 text-white text-xl drop-shadow-md">
-        Total Cost: €{tripCost.toLocaleString()}
+        Total Cost: €{tripCost}
       </p>
 
       {/* Total Trip Cost (Under Title) */}
       <p className="absolute top-24 left-6 text-white text-xl drop-shadow-md">
-        Net Cost: €{netCost.toLocaleString()}
+        Net Cost: €{netCost}
       </p>
 
       {/* Change Cover Photo Button (Bottom Right) */}
