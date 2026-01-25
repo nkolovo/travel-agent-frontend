@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, act } from "react";
-import type { Activity, Item } from "./types/types"; // Importing Item type for TypeScript
+import type { Activity, Item } from "./types/types";
 import { FaTimes, FaBold, FaItalic, FaLink } from "react-icons/fa";
 import "./../styles/itemModal.css";
 import { FiCamera } from "react-icons/fi";
@@ -13,8 +13,13 @@ interface ItemModalProps {
 }
 
 const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModalActivity, item, activity }) => {
+    const [countries, setCountries] = useState<string[]>([]);
+    const [locations, setLocations] = useState<string[]>([]);
     const [country, setCountry] = useState(item?.country || activity?.country || "Greece"); // Default country if not provided
     const [location, setLocation] = useState(item?.location || activity?.location || "");
+    const [locationInput, setLocationInput] = useState(item?.location || activity?.location || "");
+    const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
+    const [isSelectingFromDropdown, setIsSelectingFromDropdown] = useState(false);
     const [category, setCategory] = useState(item?.category || activity?.category || "Activity");
     const [title, setTitle] = useState(item?.name || activity?.name || "");
     const [description, setDescription] = useState(item?.description || activity?.description || "");
@@ -30,8 +35,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
 
     if (!isOpen) return null; // Do not render if isOpen is false
 
-    const countries = ["Greece", "Italy", "Spain", "France"];
-    const locations = ["Athens", "Mykonos", "Ios", "Paros", "Naxos", "Crete"];
     const categories = ["Activity", "Lodging", "Flight", "Transportation", "Cruise", "Info"];
 
     const handleFormat = (command: string, value?: string) => {
@@ -91,6 +94,48 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         updateActiveFormats();
     };
 
+    // Get countries on mount
+    useEffect(() => {
+        const fetchCountries = async () => {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items/countries`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            })
+                .then(res => {
+                    if (!res.ok)
+                        throw new Error(`Request error: ${res.status}`);
+                    return res.json()
+                })
+                .then((data) => {
+                    setCountries(data);
+                })
+                .catch(error => console.error("Error adding dates", error));
+        }
+        const fetchLocations = async () => {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items/locations`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            })
+                .then(res => {
+                    if (!res.ok)
+                        throw new Error(`Request error: ${res.status}`);
+                    return res.json()
+                })
+                .then(data => {
+                    setLocations(data);
+                })
+                .catch(error => console.error("Error fetching locations", error));
+        }
+        fetchCountries();
+        fetchLocations();
+    }, []);
+
     // Add event listener for selection changes
     useEffect(() => {
         if (item || activity) {
@@ -107,6 +152,63 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             document.removeEventListener("selectionchange", handleSelectionChange);
         };
     }, []);
+
+    const addCountry = async () => {
+        const newCountry = prompt("Enter new country:");
+        if (newCountry === null) return; // User clicked cancel
+        if (newCountry && !countries.includes(newCountry)) {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items/add/country/${newCountry}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            })
+                .then(async res => {
+                    if (!res.ok)
+                        throw new Error(`Request error: ${res.status}`);
+                })
+                .catch(error => { console.warn("Error saving new country. ", error) })
+            setCountries([...countries, newCountry]);
+        }
+        else if (newCountry && countries.includes(newCountry)) {
+            window.alert("Country already exists.");
+        }
+        else {
+            window.alert("Please enter country.");
+        }
+    }
+
+    const addLocation = async () => {
+        const newLocation = prompt("Enter new location:");
+        if (newLocation === null) return;
+        const newCountry = prompt("Enter already existing country for location:");
+        if (newCountry === null) return;
+        if (newLocation && !locations.includes(newLocation) && newCountry && countries.includes(newCountry)) {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items/add/location/${newCountry}/${newLocation}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            })
+                .then(async res => {
+                    if (!res.ok)
+                        throw new Error(`Request error: ${res.status}`);
+                })
+                .catch(error => { console.warn("Error saving new location. ", error) })
+            setLocations([...locations, newLocation]);
+        }
+        else if (newLocation && locations.includes(newLocation)) {
+            window.alert("Location already exists.");
+        }
+        else if (newCountry && !countries.includes(newCountry)) {
+            window.alert("Country does not exist. Please add the country first.");
+        }
+        else if (!newCountry || !newLocation) {
+            window.alert("Please enter both country and location.");
+        }
+    }
 
     const saveItem = async () => {
         if (!location || !category || !title || !description) {
@@ -244,22 +346,91 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                     {cntry}
                                 </button>
                             ))}
+                            <button
+                                key="Add"
+                                className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600"
+                                onClick={() => addCountry()}
+                            >
+                                Add Country
+                            </button>
                         </div>
                     </div>
 
                     {/* Location Row */}
                     <div className="modal-row">
                         <span className="modal-row-label">Location</span>
-                        <div className="modal-row-content">
-                            {locations.map((loc) => (
-                                <button
-                                    key={loc}
-                                    className={`enum-button ${location === loc ? "active" : ""}`}
-                                    onClick={() => setLocation(loc)}
-                                >
-                                    {loc}
-                                </button>
-                            ))}
+                        <div className="modal-row-content" style={{ display: "flex", alignItems: "center", gap: "1rem", position: "relative" }}>
+                            <div style={{ position: "relative", minWidth: "200px" }}>
+                                <input
+                                    type="text"
+                                    value={locationInput}
+                                    onChange={(e) => {
+                                        setLocationInput(e.target.value);
+                                        setIsLocationDropdownOpen(true);
+                                    }}
+                                    onFocus={() => setIsLocationDropdownOpen(true)}
+                                    onBlur={() => {
+                                        setTimeout(() => {
+                                            setIsLocationDropdownOpen(false);
+                                            // Only reset if user isn't actively selecting from dropdown
+                                            if (!isSelectingFromDropdown && !locations.includes(locationInput) && location) {
+                                                setLocationInput(location);
+                                            }
+                                            setIsSelectingFromDropdown(false);
+                                        }, 150);
+                                    }}
+                                    placeholder="Type to search locations..."
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                                        location && locations.includes(location) 
+                                            ? 'border-green-500 bg-green-50 focus:ring-green-500 text-green-700' 
+                                            : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
+                                    }`}
+                                />
+                                {location && locations.includes(location) && (
+                                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500 font-bold">
+                                        ✓
+                                    </span>
+                                )}
+                                {isLocationDropdownOpen && (
+                                    <div 
+                                        className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+                                        onMouseDown={() => setIsSelectingFromDropdown(true)}
+                                        onMouseUp={() => setIsSelectingFromDropdown(false)}
+                                    >
+                                        {locations
+                                            .filter(loc => loc.toLowerCase().includes(locationInput.toLowerCase()))
+                                            .map((loc) => (
+                                                <div
+                                                    key={loc}
+                                                    className={`px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center ${
+                                                        location === loc ? 'bg-blue-50 text-blue-700 font-medium border-l-4 border-blue-500' : ''
+                                                    }`}
+                                                    onClick={() => {
+                                                        setLocation(loc);
+                                                        setLocationInput(loc);
+                                                        setIsLocationDropdownOpen(false);
+                                                    }}
+                                                >
+                                                    <span>{loc}</span>
+                                                    {location === loc && (
+                                                        <span className="text-blue-500 font-bold">✓</span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        {locations.filter(loc => loc.toLowerCase().includes(locationInput.toLowerCase())).length === 0 && (
+                                            <div className="px-3 py-2 text-gray-500 italic">
+                                                No locations found
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600"
+                                onClick={() => addLocation()}
+                            >
+                                Add Location
+                            </button>
                         </div>
                     </div>
 
