@@ -28,6 +28,64 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
   const [selectedItem, setSelectedItem] = useState<Item | undefined>(); // State for selected item
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
 
+  // Helper function to truncate long descriptions while preserving HTML formatting
+  const truncateDescription = (description: string, maxLength: number = 100): string => {
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = DOMPurify.sanitize(description);
+    const textContent = tempDiv.textContent || tempDiv.innerText || "";
+    
+    if (textContent.length <= maxLength) {
+      return description; // Return original with formatting if short enough
+    }
+    
+    // Truncate while preserving HTML structure
+    let truncatedHTML = '';
+    let textLength = 0;
+    
+    const traverse = (node: Node): boolean => {
+      if (textLength >= maxLength) return false;
+      
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent || '';
+        const remainingLength = maxLength - textLength;
+        
+        if (text.length <= remainingLength) {
+          truncatedHTML += text;
+          textLength += text.length;
+        } else {
+          truncatedHTML += text.substring(0, remainingLength);
+          textLength = maxLength;
+          return false;
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as Element;
+        truncatedHTML += `<${element.tagName.toLowerCase()}`;
+        
+        // Add attributes
+        for (let i = 0; i < element.attributes.length; i++) {
+          const attr = element.attributes[i];
+          truncatedHTML += ` ${attr.name}="${attr.value}"`;
+        }
+        truncatedHTML += '>';
+        
+        // Process children
+        for (let i = 0; i < node.childNodes.length; i++) {
+          if (!traverse(node.childNodes[i])) break;
+        }
+        
+        truncatedHTML += `</${element.tagName.toLowerCase()}>`;
+      }
+      
+      return true;
+    };
+    
+    for (let i = 0; i < tempDiv.childNodes.length; i++) {
+      if (!traverse(tempDiv.childNodes[i])) break;
+    }
+    
+    return truncatedHTML + "...";
+  };
+
   // Get unique countries & locations from items
   const uniqueCountries = [...new Set(items.map((item) => item.country))];
   const uniqueLocations = [...new Set(items.map((item) => item.location))];
@@ -186,7 +244,7 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
                       ${categoryColors[item.category]?.hover || ""}`}
                   >
                     <h3 className="font-medium" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.name) }} />
-                    <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.description) }} />
+                    <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: truncateDescription(item.description) }} />
                     <p className="text-xs text-gray-500">{item.location}</p>
                     <p className="text-xs text-gray-700">Retail Price: {item.retailPrice > 0 ? item.retailPrice : "N/A"}</p>
                     <p className="text-xs text-gray-500">Net Price: {item.netPrice > 0 ? item.netPrice : "N/A"}</p>
