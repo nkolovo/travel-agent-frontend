@@ -154,8 +154,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     }, []);
 
     const addCountry = async () => {
-        const newCountry = prompt("Enter new country:");
-        if (newCountry === null) return; // User clicked cancel
+        const newCountryInput = prompt("Enter new country:");
+        if (newCountryInput === null) return; // User clicked cancel
+        const newCountry = newCountryInput ? newCountryInput.trim().charAt(0).toUpperCase() + newCountryInput.trim().slice(1).toLowerCase() : "";
         if (newCountry && !countries.includes(newCountry)) {
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items/add/country/${newCountry}`, {
                 method: "POST",
@@ -171,7 +172,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 .catch(error => { console.warn("Error saving new country. ", error) })
             setCountries([...countries, newCountry]);
         }
-        else if (newCountry && countries.includes(newCountry)) {
+        else if (newCountryInput && countries.includes(newCountryInput.trim().charAt(0).toUpperCase() + newCountryInput.trim().slice(1).toLowerCase())) {
             window.alert("Country already exists.");
         }
         else {
@@ -180,10 +181,12 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     }
 
     const addLocation = async () => {
-        const newLocation = prompt("Enter new location:");
-        if (newLocation === null) return;
-        const newCountry = prompt("Enter already existing country for location:");
-        if (newCountry === null) return;
+        const newLocationInput = prompt("Enter new location:");
+        if (newLocationInput === null) return;
+        const newCountryInput = prompt("Enter already existing country for location:");
+        if (newCountryInput === null) return;
+        const newLocation = newLocationInput ? newLocationInput.trim().charAt(0).toUpperCase() + newLocationInput.trim().slice(1).toLowerCase() : "";
+        const newCountry = newCountryInput ? newCountryInput.trim().charAt(0).toUpperCase() + newCountryInput.trim().slice(1).toLowerCase() : "";
         if (newLocation && !locations.includes(newLocation) && newCountry && countries.includes(newCountry)) {
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items/add/location/${newCountry}/${newLocation}`, {
                 method: "POST",
@@ -199,13 +202,13 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 .catch(error => { console.warn("Error saving new location. ", error) })
             setLocations([...locations, newLocation]);
         }
-        else if (newLocation && locations.includes(newLocation)) {
+        else if (newLocationInput && locations.includes(newLocationInput.trim().charAt(0).toUpperCase() + newLocationInput.trim().slice(1).toLowerCase())) {
             window.alert("Location already exists.");
         }
-        else if (newCountry && !countries.includes(newCountry)) {
+        else if (newCountryInput && !countries.includes(newCountryInput.trim().charAt(0).toUpperCase() + newCountryInput.trim().slice(1).toLowerCase())) {
             window.alert("Country does not exist. Please add the country first.");
         }
-        else if (!newCountry || !newLocation) {
+        else if (!newCountryInput || !newLocationInput) {
             window.alert("Please enter both country and location.");
         }
     }
@@ -380,11 +383,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                         }, 150);
                                     }}
                                     placeholder="Type to search locations..."
-                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                                        location && locations.includes(location) 
-                                            ? 'border-green-500 bg-green-50 focus:ring-green-500 text-green-700' 
-                                            : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
-                                    }`}
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${location && locations.includes(location)
+                                        ? 'border-green-500 bg-green-50 focus:ring-green-500 text-green-700'
+                                        : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
+                                        }`}
                                 />
                                 {location && locations.includes(location) && (
                                     <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500 font-bold">
@@ -392,7 +394,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                     </span>
                                 )}
                                 {isLocationDropdownOpen && (
-                                    <div 
+                                    <div
                                         className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
                                         onMouseDown={() => setIsSelectingFromDropdown(true)}
                                         onMouseUp={() => setIsSelectingFromDropdown(false)}
@@ -402,9 +404,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                             .map((loc) => (
                                                 <div
                                                     key={loc}
-                                                    className={`px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center ${
-                                                        location === loc ? 'bg-blue-50 text-blue-700 font-medium border-l-4 border-blue-500' : ''
-                                                    }`}
+                                                    className={`px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center ${location === loc ? 'bg-blue-50 text-blue-700 font-medium border-l-4 border-blue-500' : ''
+                                                        }`}
                                                     onClick={() => {
                                                         setLocation(loc);
                                                         setLocationInput(loc);
