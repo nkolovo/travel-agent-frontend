@@ -89,6 +89,45 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         setActiveFormats(formats);
     };
 
+    // Helper function to clean pasted content while preserving basic formatting
+    const cleanPastedContent = (html: string): string => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Remove all style attributes and font-related elements
+        const allElements = tempDiv.querySelectorAll('*');
+        allElements.forEach(element => {
+            element.removeAttribute('style');
+            element.removeAttribute('class');
+            element.removeAttribute('id');
+            
+            // Remove font-related tags but preserve content
+            if (['FONT', 'SPAN'].includes(element.tagName) && 
+                !['B', 'I', 'U', 'STRONG', 'EM'].includes(element.tagName)) {
+                const parent = element.parentNode;
+                while (element.firstChild) {
+                    parent?.insertBefore(element.firstChild, element);
+                }
+                element.remove();
+            }
+        });
+        
+        return tempDiv.innerHTML;
+    };
+
+    // Handle paste events for content cleaning
+    const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        
+        const clipboardData = e.clipboardData;
+        const pastedData = clipboardData.getData('text/html') || clipboardData.getData('text/plain');
+        
+        if (pastedData) {
+            const cleanedContent = cleanPastedContent(pastedData);
+            document.execCommand('insertHTML', false, cleanedContent);
+        }
+    };
+
     // Event listener for selection changes
     const handleSelectionChange = () => {
         updateActiveFormats();
@@ -459,6 +498,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 className="title-textarea"
                                 contentEditable
                                 suppressContentEditableWarning
+                                onPaste={handlePaste}
                                 onInput={(e) => {
                                     // Update the state with the current content
                                     let html = (e.target as HTMLDivElement).innerHTML;
@@ -510,6 +550,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 className="notes-textarea"
                                 contentEditable
                                 suppressContentEditableWarning
+                                onPaste={handlePaste}
                                 onInput={(e) => {
                                     // Get the HTML content
                                     let html = (e.target as HTMLDivElement).innerHTML;
