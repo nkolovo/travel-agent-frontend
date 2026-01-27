@@ -55,7 +55,6 @@ export default function ItineraryPage({ id }: { id: string }) {
                 })
                 .then(itinerary => {
                     setItineraryId(itinerary.id);
-                    console.log("Itinerary costs fetched:", { tripCost: itinerary.tripCost, netCost: itinerary.netCost });
                     setItineraryTripCost(itinerary.tripPrice);
                     setItineraryNetCost(itinerary.netPrice);
                     itinerary.dates.sort((a: Date, b: Date) => {
@@ -97,6 +96,9 @@ export default function ItineraryPage({ id }: { id: string }) {
                     category: activity.category,
                     name: activity.name,
                     description: activity.description,
+                    supplierName: activity.supplierName,
+                    supplierContact: activity.supplierContact,
+                    supplierUrl: activity.supplierUrl,
                     retailPrice: activity.retailPrice,
                     netPrice: activity.netPrice,
                     imageName: activity.imageName,
@@ -167,6 +169,9 @@ export default function ItineraryPage({ id }: { id: string }) {
             category: item.category,
             name: item.name,
             description: item.description,
+            supplierName: item.supplierName,
+            supplierContact: item.supplierContact,
+            supplierUrl: item.supplierUrl,
             retailPrice: item.retailPrice,
             netPrice: item.netPrice,
             imageName: item.imageName,
@@ -248,7 +253,6 @@ export default function ItineraryPage({ id }: { id: string }) {
             const original = origMap.get(updated.item.id)!;
             const deltaRetail = (updated.retailPrice ?? 0) - (original.retailPrice ?? 0);
             const deltaNet = (updated.netPrice ?? 0) - (original.netPrice ?? 0);
-            console.log(deltaRetail, deltaNet);
             if (deltaRetail !== 0 || deltaNet !== 0) handlePriceChange(deltaRetail, deltaNet);
             saveActivityToDate(updated);
         }

@@ -59,6 +59,10 @@ export interface Item {
   priority?: number;
   imageName?: string;
   imageUrl?: string;
+  supplierId?: number;
+  supplierName?: string;
+  supplierContact?: string;
+  supplierUrl?: string;
 }
 
 export interface Activity {
@@ -75,4 +79,16 @@ export interface Activity {
   priority: number;
   imageName?: string;
   imageUrl?: string;
+  supplierId?: number;
+  supplierName?: string;
+  supplierContact?: string;
+  supplierUrl?: string;
+}
+
+export interface Supplier {
+  id?: number;
+  name?: string;
+  contact?: string;
+  url?: string;
+  deleted: boolean;
 }
