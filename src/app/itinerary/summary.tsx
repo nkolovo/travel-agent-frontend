@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import type { Date } from './types/types';
 import { Activity } from './types/types';
-import { FaCalendarAlt, FaPlaneArrival, FaPlaneDeparture } from "react-icons/fa";
+import { FaCalendarAlt, FaPlaneArrival, FaPlaneDeparture, FaShip } from "react-icons/fa";
 import { FiEdit, FiX } from 'react-icons/fi';
 import ItemModal from './itemModal';
 import DOMPurify from "dompurify";
@@ -157,6 +157,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
         <div className="flex items-center space-x-2 text-lg font-semibold text-gray-700">
           {(date?.name.includes("Arrival") || date?.name.includes("Flight")) && <FaPlaneArrival className="text-teal-500" />}
           {date?.name.includes("Departure") && <FaPlaneDeparture className="text-orange-500" />}
+          {date?.name.includes("Ferry") && <FaShip className="text-blue-500" />}
           <span>{date?.name}</span>
         </div>
       </div>

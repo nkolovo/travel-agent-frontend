@@ -113,6 +113,9 @@
 
 .title-textarea,
 .notes-textarea,
+.supplier-name-textarea,
+.supplier-contact-textarea,
+.supplier-url-textarea,
 .retail-price-textarea,
 .net-price-textarea {
   width: 100%;

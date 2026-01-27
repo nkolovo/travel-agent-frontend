@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, act } from "react";
-import type { Activity, Item } from "./types/types";
+import type { Activity, Item, Supplier } from "./types/types";
 import { FaTimes, FaBold, FaItalic, FaLink } from "react-icons/fa";
 import "./../styles/itemModal.css";
 import { FiCamera } from "react-icons/fi";
@@ -23,13 +23,22 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     const [category, setCategory] = useState(item?.category || activity?.category || "Activity");
     const [title, setTitle] = useState(item?.name || activity?.name || "");
     const [description, setDescription] = useState(item?.description || activity?.description || "");
+    const [supplierName, setSupplierName] = useState<string | null>(item?.supplierName || activity?.supplierName || null);
+    const [supplierContact, setSupplierContact] = useState<string | null>(item?.supplierContact || activity?.supplierContact || null);
+    const [supplierUrl, setSupplierUrl] = useState<string | null>(item?.supplierUrl || activity?.supplierUrl || null);
+    const [hasSupplier, setHasSupplier] = useState<boolean>(
+        Boolean(item?.supplierName || activity?.supplierName)
+    );
     const [retailPrice, setRetailPrice] = useState(item?.retailPrice || activity?.retailPrice || 0);
     const [netPrice, setNetPrice] = useState(item?.netPrice || activity?.netPrice || 0);
     const [image, setImage] = useState(item?.imageUrl || activity?.imageUrl || "");
     const [imageName, setImageName] = useState(item?.imageName || activity?.imageName || "");
     const [activeFormats, setActiveFormats] = useState<string[]>([]);
-    const notesRef = useRef<HTMLDivElement>(null);
     const titleRef = useRef<HTMLDivElement>(null);
+    const notesRef = useRef<HTMLDivElement>(null);
+    const supplierNameRef = useRef<HTMLDivElement>(null);
+    const supplierContactRef = useRef<HTMLDivElement>(null);
+    const supplierUrlRef = useRef<HTMLDivElement>(null);
     const retailPriceRef = useRef<HTMLDivElement>(null);
     const netPriceRef = useRef<HTMLDivElement>(null);
 
@@ -93,16 +102,16 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     const cleanPastedContent = (html: string): string => {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
-        
+
         // Remove all style attributes and font-related elements
         const allElements = tempDiv.querySelectorAll('*');
         allElements.forEach(element => {
             element.removeAttribute('style');
             element.removeAttribute('class');
             element.removeAttribute('id');
-            
+
             // Remove font-related tags but preserve content
-            if (['FONT', 'SPAN'].includes(element.tagName) && 
+            if (['FONT', 'SPAN'].includes(element.tagName) &&
                 !['B', 'I', 'U', 'STRONG', 'EM'].includes(element.tagName)) {
                 const parent = element.parentNode;
                 while (element.firstChild) {
@@ -111,17 +120,17 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 element.remove();
             }
         });
-        
+
         return tempDiv.innerHTML;
     };
 
     // Handle paste events for content cleaning
     const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
         e.preventDefault();
-        
+
         const clipboardData = e.clipboardData;
         const pastedData = clipboardData.getData('text/html') || clipboardData.getData('text/plain');
-        
+
         if (pastedData) {
             const cleanedContent = cleanPastedContent(pastedData);
             document.execCommand('insertHTML', false, cleanedContent);
@@ -180,6 +189,16 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         if (item || activity) {
             titleRef.current!.innerHTML = item ? item.name : activity!.name;
             notesRef.current!.innerHTML = item ? item.description : activity!.description;
+            // Only set supplier ref innerHTML if the refs exist (when hasSupplier is true)
+            if (supplierNameRef.current) {
+                supplierNameRef.current.innerHTML = item?.supplierName ? item.supplierName ?? "" : activity?.supplierName ?? "";
+            }
+            if (supplierContactRef.current) {
+                supplierContactRef.current.innerHTML = item?.supplierContact ? item.supplierContact ?? "" : activity?.supplierContact ?? "";
+            }
+            if (supplierUrlRef.current) {
+                supplierUrlRef.current.innerHTML = item?.supplierUrl ? item.supplierUrl ?? "" : activity?.supplierUrl ?? "";
+            }
             retailPriceRef.current!.innerHTML = String(item ? item.retailPrice ?? "0" : activity?.retailPrice ?? "0");
             netPriceRef.current!.innerHTML = String(item ? item.netPrice ?? "0" : activity?.netPrice ?? "0");
             if (item?.imageName || activity?.imageName)
@@ -268,6 +287,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 category,
                 name: title,
                 description,
+                supplierName,
+                supplierContact,
+                supplierUrl,
                 retailPrice,
                 netPrice,
                 imageName
@@ -281,6 +303,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 category,
                 name: title,
                 description,
+                supplierName,
+                supplierContact,
+                supplierUrl,
                 retailPrice,
                 netPrice,
                 imageName
@@ -292,12 +317,16 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 category,
                 name: title,
                 description,
+                supplierName,
+                supplierContact,
+                supplierUrl,
                 retailPrice,
                 netPrice,
                 imageName
             } as Item;
         }
 
+        console.log(objectToSave);
         if (isActivity)
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/saveDateItem/${activity!.date.id}/item/${activity!.item.id}`, {
                 method: "POST",
@@ -562,6 +591,85 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                             </div>
                         </div>
                     </div>
+                    {/* Supplier Check */}
+                    <div className="modal-row">
+                        <span className="modal-row-label">Has Supplier</span>
+                        <div className="modal-row-content">
+                            <input
+                                type="checkbox"
+                                checked={hasSupplier}
+                                onChange={(e) => {
+                                    setHasSupplier(e.target.checked);
+                                    // Clear supplier fields if unchecked
+                                    if (!e.target.checked) {
+                                        setSupplierName("");
+                                        setSupplierContact("");
+                                        setSupplierUrl("");
+                                        if (supplierNameRef.current) supplierNameRef.current.innerHTML = "";
+                                        if (supplierContactRef.current) supplierContactRef.current.innerHTML = "";
+                                        if (supplierUrlRef.current) supplierUrlRef.current.innerHTML = "";
+                                    }
+                                }}
+                                className="mr-2"
+                            />
+                            <label>Has Supplier</label>
+                        </div>
+                    </div>
+
+                    {/* Supplier Name Row */}
+                    {hasSupplier && (
+                        <div className="modal-row">
+                            <span className="modal-row-label">Supplier Name</span>
+                            <div className="modal-row-content">
+                                <div
+                                    ref={supplierNameRef}
+                                    className="supplier-name-textarea"
+                                    contentEditable
+                                    suppressContentEditableWarning
+                                    onInput={(e) => {
+                                        setSupplierName((e.target as HTMLDivElement).innerHTML);
+                                    }}
+                                >
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {/* Supplier Contact Row */}
+                    {hasSupplier && (
+                        <div className="modal-row">
+                            <span className="modal-row-label">Supplier Contact</span>
+                            <div className="modal-row-content">
+                                <div
+                                    ref={supplierContactRef}
+                                    className="supplier-contact-textarea"
+                                    contentEditable
+                                    suppressContentEditableWarning
+                                    onInput={(e) => {
+                                        setSupplierContact((e.target as HTMLDivElement).innerHTML);
+                                    }}
+                                >
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {/* Supplier URL Row */}
+                    {hasSupplier && (
+                        <div className="modal-row">
+                            <span className="modal-row-label">Supplier URL</span>
+                            <div className="modal-row-content">
+                                <div
+                                    ref={supplierUrlRef}
+                                    className="supplier-url-textarea"
+                                    contentEditable
+                                    suppressContentEditableWarning
+                                    onInput={(e) => {
+                                        setSupplierUrl((e.target as HTMLDivElement).innerHTML);
+                                    }}
+                                >
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     {/* Retail Price Row */}
                     <div className="modal-row">
                         <span className="modal-row-label">Retail Price</span>
