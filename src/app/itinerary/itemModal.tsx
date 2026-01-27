@@ -3,6 +3,7 @@ import type { Activity, Item, Supplier } from "./types/types";
 import { FaTimes, FaBold, FaItalic, FaLink } from "react-icons/fa";
 import "./../styles/itemModal.css";
 import { FiCamera } from "react-icons/fi";
+import { FcDeleteDatabase } from "react-icons/fc";
 
 interface ItemModalProps {
     isOpen: boolean; // Prop to control modal visibility
@@ -20,9 +21,13 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     const [locationInput, setLocationInput] = useState(item?.location || activity?.location || "");
     const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
     const [isSelectingFromDropdown, setIsSelectingFromDropdown] = useState(false);
+    const [supplierInput, setSupplierInput] = useState(item?.supplierName || activity?.supplierName || "");
+    const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState(false);
+    const [isSelectingSupplierFromDropdown, setIsSelectingSupplierFromDropdown] = useState(false);
     const [category, setCategory] = useState(item?.category || activity?.category || "Activity");
     const [title, setTitle] = useState(item?.name || activity?.name || "");
     const [description, setDescription] = useState(item?.description || activity?.description || "");
+    const [supplierNames, setSupplierNames] = useState<string[]>([]);
     const [supplierName, setSupplierName] = useState<string | null>(item?.supplierName || activity?.supplierName || null);
     const [supplierContact, setSupplierContact] = useState<string | null>(item?.supplierContact || activity?.supplierContact || null);
     const [supplierUrl, setSupplierUrl] = useState<string | null>(item?.supplierUrl || activity?.supplierUrl || null);
@@ -36,7 +41,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     const [activeFormats, setActiveFormats] = useState<string[]>([]);
     const titleRef = useRef<HTMLDivElement>(null);
     const notesRef = useRef<HTMLDivElement>(null);
-    const supplierNameRef = useRef<HTMLDivElement>(null);
     const supplierContactRef = useRef<HTMLDivElement>(null);
     const supplierUrlRef = useRef<HTMLDivElement>(null);
     const retailPriceRef = useRef<HTMLDivElement>(null);
@@ -184,15 +188,22 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         fetchLocations();
     }, []);
 
+    // Fetch supplier names when hasSupplier becomes true
+    useEffect(() => {
+        if (hasSupplier) {
+            fetchSupplierNames();
+        }
+    }, [hasSupplier]);
+
     // Add event listener for selection changes
     useEffect(() => {
         if (item || activity) {
             titleRef.current!.innerHTML = item ? item.name : activity!.name;
             notesRef.current!.innerHTML = item ? item.description : activity!.description;
+            // Set supplier input for dropdown
+            const existingSupplierName = item?.supplierName || activity?.supplierName || "";
+            setSupplierInput(existingSupplierName);
             // Only set supplier ref innerHTML if the refs exist (when hasSupplier is true)
-            if (supplierNameRef.current) {
-                supplierNameRef.current.innerHTML = item?.supplierName ? item.supplierName ?? "" : activity?.supplierName ?? "";
-            }
             if (supplierContactRef.current) {
                 supplierContactRef.current.innerHTML = item?.supplierContact ? item.supplierContact ?? "" : activity?.supplierContact ?? "";
             }
@@ -269,6 +280,98 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         else if (!newCountryInput || !newLocationInput) {
             window.alert("Please enter both country and location.");
         }
+    }
+
+    const addSupplier = async () => {
+        const newSupplierNameInput = prompt("Enter supplier name:");
+        if (newSupplierNameInput === null) return;
+        const newSupplierContactInput = prompt("Enter supplier contact:");
+        const newSupplierUrlInput = prompt("Enter supplier URL:");
+        const newSupplierName = newSupplierNameInput ? newSupplierNameInput.trim() : "";
+        const newSupplierContact = newSupplierContactInput ? newSupplierContactInput.trim() : "";
+        const newSupplierUrl = newSupplierUrlInput ? newSupplierUrlInput.trim() : "";
+
+        if (newSupplierName) {
+            const supplierData = {
+                name: newSupplierName,
+                contact: newSupplierContact,
+                url: newSupplierUrl,
+                deleted: false
+            };
+
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/suppliers/save`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify(supplierData),
+            })
+                .then(async res => {
+                    if (!res.ok)
+                        throw new Error(`Request error: ${res.status}`);
+                    setSupplierNames([...supplierNames, newSupplierName]);
+                    setSupplierInput(newSupplierName);
+                    setSupplierName(newSupplierName);
+                })
+                .catch(error => { console.warn("Error saving new supplier. ", error) })
+        } else {
+            window.alert("Please enter at least the supplier name.");
+        }
+    }
+
+    const fetchSupplierNames = async () => {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/suppliers/all-names`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+        })
+            .then(res => {
+                if (!res.ok)
+                    throw new Error(`Request error: ${res.status}`);
+                return res.json()
+            })
+            .then(data => {
+                setSupplierNames(data);
+            })
+            .catch(error => console.error("Error fetching supplier names", error));
+    }
+
+    const fetchFullSupplierDetails = async (name: string) => {
+        setSupplierName(name);
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/suppliers/name/${name}`, {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+        })
+            .then(res => {
+                if (!res.ok)
+                    throw new Error(`Request error: ${res.status}`);
+                return res.json()
+            })
+            .then(supplier => {
+                console.log(supplier);
+                setSupplierContact(supplier.contact);
+                setSupplierUrl(supplier.url);
+                // Update the contentEditable divs
+                if (supplierContactRef.current) {
+                    supplierContactRef.current.innerHTML = supplier.contact;
+                }
+                if (supplierUrlRef.current) {
+                    supplierUrlRef.current.innerHTML = supplier.url;
+                }
+            })
+            .catch(error => console.error("Error fetching supplier details", error));
+    }
+
+    const handleSupplierSelection = async (selectedSupplierName: string) => {
+        setSupplierInput(selectedSupplierName);
+        setSupplierName(selectedSupplierName);
+        setIsSupplierDropdownOpen(false);
+        await fetchFullSupplierDetails(selectedSupplierName);
     }
 
     const saveItem = async () => {
@@ -603,9 +706,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                     // Clear supplier fields if unchecked
                                     if (!e.target.checked) {
                                         setSupplierName("");
+                                        setSupplierInput("");
                                         setSupplierContact("");
                                         setSupplierUrl("");
-                                        if (supplierNameRef.current) supplierNameRef.current.innerHTML = "";
                                         if (supplierContactRef.current) supplierContactRef.current.innerHTML = "";
                                         if (supplierUrlRef.current) supplierUrlRef.current.innerHTML = "";
                                     }
@@ -615,22 +718,76 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                             <label>Has Supplier</label>
                         </div>
                     </div>
-
                     {/* Supplier Name Row */}
                     {hasSupplier && (
                         <div className="modal-row">
                             <span className="modal-row-label">Supplier Name</span>
-                            <div className="modal-row-content">
-                                <div
-                                    ref={supplierNameRef}
-                                    className="supplier-name-textarea"
-                                    contentEditable
-                                    suppressContentEditableWarning
-                                    onInput={(e) => {
-                                        setSupplierName((e.target as HTMLDivElement).innerHTML);
-                                    }}
-                                >
+                            <div className="modal-row-content" style={{ display: "flex", alignItems: "center", gap: "1rem", position: "relative" }}>
+                                <div style={{ position: "relative", minWidth: "200px" }}>
+                                    <input
+                                        type="text"
+                                        value={supplierInput}
+                                        onChange={(e) => {
+                                            setSupplierInput(e.target.value);
+                                            setIsSupplierDropdownOpen(true);
+                                        }}
+                                        onFocus={() => setIsSupplierDropdownOpen(true)}
+                                        onBlur={() => {
+                                            setTimeout(() => {
+                                                setIsSupplierDropdownOpen(false);
+                                                // Only reset if user isn't actively selecting from dropdown
+                                                if (!isSelectingSupplierFromDropdown && supplierNames && !supplierNames.includes(supplierInput) && supplierName) {
+                                                    setSupplierInput(supplierName);
+                                                }
+                                                setIsSelectingSupplierFromDropdown(false);
+                                            }, 150);
+                                        }}
+                                        placeholder="Type to search suppliers..."
+                                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${supplierName && supplierNames && supplierNames.includes(supplierName)
+                                            ? 'border-green-500 bg-green-50 focus:ring-green-500 text-green-700'
+                                            : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
+                                            }`}
+                                    />
+                                    {supplierName && supplierNames && supplierNames.includes(supplierName) && (
+                                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500 font-bold">
+                                            ✓
+                                        </span>
+                                    )}
+                                    {isSupplierDropdownOpen && supplierNames && (
+                                        <div
+                                            className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+                                            onMouseDown={() => setIsSelectingSupplierFromDropdown(true)}
+                                            onMouseUp={() => setIsSelectingSupplierFromDropdown(false)}
+                                        >
+                                            {supplierNames
+                                                .filter(supplier => supplier.toLowerCase().includes(supplierInput.toLowerCase()))
+                                                .map((supplier) => (
+                                                    <div
+                                                        key={supplier}
+                                                        className={`px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center ${supplierName === supplier ? 'bg-blue-50 text-blue-700 font-medium border-l-4 border-blue-500' : ''
+                                                            }`}
+                                                        onClick={() => handleSupplierSelection(supplier)}
+                                                    >
+                                                        <span>{supplier}</span>
+                                                        {supplierName === supplier && (
+                                                            <span className="text-blue-500 font-bold">✓</span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            {supplierNames.filter(supplier => supplier.toLowerCase().includes(supplierInput.toLowerCase())).length === 0 && (
+                                                <div className="px-3 py-2 text-gray-500 italic">
+                                                    No suppliers found
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
+                                <button
+                                    className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600"
+                                    onClick={() => addSupplier()}
+                                >
+                                    Add Supplier
+                                </button>
                             </div>
                         </div>
                     )}
