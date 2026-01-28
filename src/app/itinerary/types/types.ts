@@ -65,6 +65,7 @@ export interface Item {
   supplierNumber?: string;
   supplierEmail?: string;
   supplierUrl?: string;
+  notes?: string;
 }
 
 export interface Activity {
@@ -87,6 +88,7 @@ export interface Activity {
   supplierNumber?: string;
   supplierEmail?: string;
   supplierUrl?: string;
+  notes?: string;
 }
 
 export interface Supplier {
