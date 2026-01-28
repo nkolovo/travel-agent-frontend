@@ -101,8 +101,8 @@ export default function ItineraryPage({ id }: { id: string }) {
                     supplierUrl: activity.supplierUrl,
                     retailPrice: activity.retailPrice,
                     netPrice: activity.netPrice,
-                    imageName: activity.imageName,
-                    imageUrl: activity.imageUrl,
+                    imageNames: activity.imageNames,
+                    imageUrls: activity.imageUrls,
                     priority: activity.priority,
                 })));
             })
@@ -174,7 +174,7 @@ export default function ItineraryPage({ id }: { id: string }) {
             supplierUrl: item.supplierUrl,
             retailPrice: item.retailPrice,
             netPrice: item.netPrice,
-            imageName: item.imageName,
+            imageNames: item.imageNames,
             priority: activities.length > 0
                 ? Math.max(...activities.map(a => a.priority ?? 0)) + 1
                 : 1,
