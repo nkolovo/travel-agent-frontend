@@ -60,8 +60,10 @@ export interface Item {
   imageNames?: string[];
   imageUrls?: string[];
   supplierId?: number;
+  supplierCompany?: string;
   supplierName?: string;
-  supplierContact?: string;
+  supplierNumber?: string;
+  supplierEmail?: string;
   supplierUrl?: string;
 }
 
@@ -80,15 +82,19 @@ export interface Activity {
   imageNames?: string[];
   imageUrls?: string[];
   supplierId?: number;
+  supplierCompany?: string;
   supplierName?: string;
-  supplierContact?: string;
+  supplierNumber?: string;
+  supplierEmail?: string;
   supplierUrl?: string;
 }
 
 export interface Supplier {
   id?: number;
+  company?: string;
   name?: string;
-  contact?: string;
+  number?: string;
+  email?: string;
   url?: string;
   deleted: boolean;
 }

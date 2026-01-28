@@ -3,7 +3,6 @@ import type { Activity, Item, Supplier } from "./types/types";
 import { FaTimes, FaBold, FaItalic, FaLink } from "react-icons/fa";
 import "./../styles/itemModal.css";
 import { FiCamera } from "react-icons/fi";
-import { FcDeleteDatabase } from "react-icons/fc";
 
 interface ItemModalProps {
     isOpen: boolean; // Prop to control modal visibility
@@ -27,9 +26,11 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     const [category, setCategory] = useState(item?.category || activity?.category || "Activity");
     const [title, setTitle] = useState(item?.name || activity?.name || "");
     const [description, setDescription] = useState(item?.description || activity?.description || "");
-    const [supplierNames, setSupplierNames] = useState<string[]>([]);
+    const [supplierCompanies, setSupplierCompanies] = useState<string[]>([]);
+    const [supplierCompany, setSupplierCompany] = useState<string | null>(item?.supplierCompany || activity?.supplierCompany || null);
     const [supplierName, setSupplierName] = useState<string | null>(item?.supplierName || activity?.supplierName || null);
-    const [supplierContact, setSupplierContact] = useState<string | null>(item?.supplierContact || activity?.supplierContact || null);
+    const [supplierNumber, setSupplierNumber] = useState<string | null>(item?.supplierNumber || activity?.supplierNumber || null);
+    const [supplierEmail, setSupplierEmail] = useState<string | null>(item?.supplierEmail || activity?.supplierEmail || null);
     const [supplierUrl, setSupplierUrl] = useState<string | null>(item?.supplierUrl || activity?.supplierUrl || null);
     const [hasSupplier, setHasSupplier] = useState<boolean>(
         Boolean(item?.supplierName || activity?.supplierName)
@@ -42,7 +43,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     const [activeFormats, setActiveFormats] = useState<string[]>([]);
     const titleRef = useRef<HTMLDivElement>(null);
     const notesRef = useRef<HTMLDivElement>(null);
-    const supplierContactRef = useRef<HTMLDivElement>(null);
+    const supplierNameRef = useRef<HTMLDivElement>(null);
+    const supplierNumberRef = useRef<HTMLDivElement>(null);
+    const supplierEmailRef = useRef<HTMLDivElement>(null);
     const supplierUrlRef = useRef<HTMLDivElement>(null);
     const retailPriceRef = useRef<HTMLDivElement>(null);
     const netPriceRef = useRef<HTMLDivElement>(null);
@@ -189,10 +192,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         fetchLocations();
     }, []);
 
-    // Fetch supplier names when hasSupplier becomes true
+    // Fetch supplier companies when hasSupplier becomes true
     useEffect(() => {
         if (hasSupplier) {
-            fetchSupplierNames();
+            fetchSupplierCompanies();
         }
     }, [hasSupplier]);
 
@@ -202,11 +205,17 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             titleRef.current!.innerHTML = item ? item.name : activity!.name;
             notesRef.current!.innerHTML = item ? item.description : activity!.description;
             // Set supplier input for dropdown
-            const existingSupplierName = item?.supplierName || activity?.supplierName || "";
-            setSupplierInput(existingSupplierName);
+            const existingSupplierCompany = item?.supplierCompany || activity?.supplierCompany || "";
+            setSupplierInput(existingSupplierCompany);
             // Only set supplier ref innerHTML if the refs exist (when hasSupplier is true)
-            if (supplierContactRef.current) {
-                supplierContactRef.current.innerHTML = item?.supplierContact ? item.supplierContact ?? "" : activity?.supplierContact ?? "";
+            if (supplierNameRef.current) {
+                supplierNameRef.current.innerHTML = item?.supplierName ? item.supplierName ?? "" : activity?.supplierName ?? "";
+            }
+            if (supplierNumberRef.current) {
+                supplierNumberRef.current.innerHTML = item?.supplierNumber ? item.supplierNumber ?? "" : activity?.supplierNumber ?? "";
+            }
+            if (supplierEmailRef.current) {
+                supplierEmailRef.current.innerHTML = item?.supplierEmail ? item.supplierEmail ?? "" : activity?.supplierEmail ?? "";
             }
             if (supplierUrlRef.current) {
                 supplierUrlRef.current.innerHTML = item?.supplierUrl ? item.supplierUrl ?? "" : activity?.supplierUrl ?? "";
@@ -284,18 +293,24 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     }
 
     const addSupplier = async () => {
-        const newSupplierNameInput = prompt("Enter supplier name:");
-        if (newSupplierNameInput === null) return;
-        const newSupplierContactInput = prompt("Enter supplier contact:");
+        const newSupplierCompanyInput = prompt("Enter supplier company:");
+        if (newSupplierCompanyInput === null) return;
+        const newSupplierNameInput = prompt("Enter supplier contact name:");
+        const newSupplierNumberInput = prompt("Enter supplier contact number:");
+        const newSupplierEmailInput = prompt("Enter supplier contact email:");
         const newSupplierUrlInput = prompt("Enter supplier URL:");
+        const newSupplierCompany = newSupplierCompanyInput ? newSupplierCompanyInput.trim() : "";
         const newSupplierName = newSupplierNameInput ? newSupplierNameInput.trim() : "";
-        const newSupplierContact = newSupplierContactInput ? newSupplierContactInput.trim() : "";
+        const newSupplierNumber = newSupplierNumberInput ? newSupplierNumberInput.trim() : "";
+        const newSupplierEmail = newSupplierEmailInput ? newSupplierEmailInput.trim() : "";
         const newSupplierUrl = newSupplierUrlInput ? newSupplierUrlInput.trim() : "";
 
         if (newSupplierName) {
             const supplierData = {
+                company: newSupplierCompany,
                 name: newSupplierName,
-                contact: newSupplierContact,
+                number: newSupplierNumber,
+                email: newSupplierEmail,
                 url: newSupplierUrl,
                 deleted: false
             };
@@ -311,11 +326,15 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 .then(async res => {
                     if (!res.ok)
                         throw new Error(`Request error: ${res.status}`);
-                    setSupplierNames([...supplierNames, newSupplierName]);
-                    setSupplierInput(newSupplierName);
+                    setSupplierCompanies([...supplierCompanies, newSupplierCompany]);
+                    setSupplierInput(newSupplierCompany);
+                    setSupplierCompany(newSupplierCompany);
                     setSupplierName(newSupplierName);
-                    setSupplierContact(newSupplierContact);
-                    supplierContactRef.current!.innerHTML = newSupplierContact;
+                    supplierNameRef.current!.innerHTML = newSupplierName;
+                    setSupplierNumber(newSupplierNumber);
+                    supplierNumberRef.current!.innerHTML = newSupplierNumber;
+                    setSupplierEmail(newSupplierEmail);
+                    supplierEmailRef.current!.innerHTML = newSupplierEmail;
                     setSupplierUrl(newSupplierUrl);
                     supplierUrlRef.current!.innerHTML = newSupplierUrl;
                 })
@@ -325,8 +344,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         }
     }
 
-    const fetchSupplierNames = async () => {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/suppliers/all-names`, {
+    const fetchSupplierCompanies = async () => {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/suppliers/all-companies`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -339,14 +358,14 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 return res.json()
             })
             .then(data => {
-                setSupplierNames(data);
+                setSupplierCompanies(data);
             })
-            .catch(error => console.error("Error fetching supplier names", error));
+            .catch(error => console.error("Error fetching supplier companies", error));
     }
 
-    const fetchFullSupplierDetails = async (name: string) => {
-        setSupplierName(name);
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/suppliers/name/${name}`, {
+    const fetchFullSupplierDetails = async (company: string) => {
+        setSupplierCompany(company);
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/suppliers/company/${company}`, {
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${localStorage.getItem("token")}`,
@@ -358,11 +377,19 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 return res.json()
             })
             .then(supplier => {
-                setSupplierContact(supplier.contact);
+                setSupplierName(supplier.name);
+                setSupplierNumber(supplier.number);
+                setSupplierEmail(supplier.email);
                 setSupplierUrl(supplier.url);
                 // Update the contentEditable divs
-                if (supplierContactRef.current) {
-                    supplierContactRef.current.innerHTML = supplier.contact;
+                if (supplierNameRef.current) {
+                    supplierNameRef.current.innerHTML = supplier.name;
+                }
+                if (supplierNumberRef.current) {
+                    supplierNumberRef.current.innerHTML = supplier.number;
+                }
+                if (supplierEmailRef.current) {
+                    supplierEmailRef.current.innerHTML = supplier.email;
                 }
                 if (supplierUrlRef.current) {
                     supplierUrlRef.current.innerHTML = supplier.url;
@@ -371,11 +398,11 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             .catch(error => console.error("Error fetching supplier details", error));
     }
 
-    const handleSupplierSelection = async (selectedSupplierName: string) => {
-        setSupplierInput(selectedSupplierName);
-        setSupplierName(selectedSupplierName);
+    const handleSupplierSelection = async (selectedSupplierCompany: string) => {
+        setSupplierInput(selectedSupplierCompany);
+        setSupplierCompany(selectedSupplierCompany);
         setIsSupplierDropdownOpen(false);
-        await fetchFullSupplierDetails(selectedSupplierName);
+        await fetchFullSupplierDetails(selectedSupplierCompany);
     }
 
     const saveItem = async () => {
@@ -394,8 +421,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 category,
                 name: title,
                 description,
+                supplierCompany,
                 supplierName,
-                supplierContact,
+                supplierNumber,
+                supplierEmail,
                 supplierUrl,
                 retailPrice,
                 netPrice,
@@ -410,8 +439,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 category,
                 name: title,
                 description,
+                supplierCompany,
                 supplierName,
-                supplierContact,
+                supplierNumber,
+                supplierEmail,
                 supplierUrl,
                 retailPrice,
                 netPrice,
@@ -424,8 +455,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 category,
                 name: title,
                 description,
+                supplierCompany,
                 supplierName,
-                supplierContact,
+                supplierNumber,
+                supplierEmail,
                 supplierUrl,
                 retailPrice,
                 netPrice,
@@ -753,11 +786,15 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                     setHasSupplier(e.target.checked);
                                     // Clear supplier fields if unchecked
                                     if (!e.target.checked) {
-                                        setSupplierName("");
+                                        setSupplierCompany("");
                                         setSupplierInput("");
-                                        setSupplierContact("");
+                                        setSupplierName("");
+                                        setSupplierNumber("");
+                                        setSupplierEmail("");
                                         setSupplierUrl("");
-                                        if (supplierContactRef.current) supplierContactRef.current.innerHTML = "";
+                                        if (supplierNameRef.current) supplierNameRef.current.innerHTML = "";
+                                        if (supplierNumberRef.current) supplierNumberRef.current.innerHTML = "";
+                                        if (supplierEmailRef.current) supplierEmailRef.current.innerHTML = "";
                                         if (supplierUrlRef.current) supplierUrlRef.current.innerHTML = "";
                                     }
                                 }}
@@ -766,10 +803,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                             <label>Has Supplier</label>
                         </div>
                     </div>
-                    {/* Supplier Name Row */}
+                    {/* Supplier Company Row */}
                     {hasSupplier && (
                         <div className="modal-row">
-                            <span className="modal-row-label">Supplier Name</span>
+                            <span className="modal-row-label">Supplier Company</span>
                             <div className="modal-row-content" style={{ display: "flex", alignItems: "center", gap: "1rem", position: "relative" }}>
                                 <div style={{ position: "relative", minWidth: "200px" }}>
                                     <input
@@ -784,45 +821,45 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                             setTimeout(() => {
                                                 setIsSupplierDropdownOpen(false);
                                                 // Only reset if user isn't actively selecting from dropdown
-                                                if (!isSelectingSupplierFromDropdown && supplierNames && !supplierNames.includes(supplierInput) && supplierName) {
-                                                    setSupplierInput(supplierName);
+                                                if (!isSelectingSupplierFromDropdown && supplierCompanies && !supplierCompanies.includes(supplierInput) && supplierCompany) {
+                                                    setSupplierInput(supplierCompany);
                                                 }
                                                 setIsSelectingSupplierFromDropdown(false);
                                             }, 150);
                                         }}
                                         placeholder="Type to search suppliers..."
-                                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${supplierName && supplierNames && supplierNames.includes(supplierName)
+                                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${supplierCompany && supplierCompanies && supplierCompanies.includes(supplierCompany)
                                             ? 'border-green-500 bg-green-50 focus:ring-green-500 text-green-700'
                                             : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
                                             }`}
                                     />
-                                    {supplierName && supplierNames && supplierNames.includes(supplierName) && (
+                                    {supplierCompany && supplierCompanies && supplierCompanies.includes(supplierCompany) && (
                                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500 font-bold">
                                             ✓
                                         </span>
                                     )}
-                                    {isSupplierDropdownOpen && supplierNames && (
+                                    {isSupplierDropdownOpen && supplierCompanies && (
                                         <div
                                             className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
                                             onMouseDown={() => setIsSelectingSupplierFromDropdown(true)}
                                             onMouseUp={() => setIsSelectingSupplierFromDropdown(false)}
                                         >
-                                            {supplierNames
+                                            {supplierCompanies
                                                 .filter(supplier => supplier.toLowerCase().includes(supplierInput.toLowerCase()))
                                                 .map((supplier) => (
                                                     <div
                                                         key={supplier}
-                                                        className={`px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center ${supplierName === supplier ? 'bg-blue-50 text-blue-700 font-medium border-l-4 border-blue-500' : ''
+                                                        className={`px-3 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center ${supplierCompany === supplier ? 'bg-blue-50 text-blue-700 font-medium border-l-4 border-blue-500' : ''
                                                             }`}
                                                         onClick={() => handleSupplierSelection(supplier)}
                                                     >
                                                         <span>{supplier}</span>
-                                                        {supplierName === supplier && (
+                                                        {supplierCompany === supplier && (
                                                             <span className="text-blue-500 font-bold">✓</span>
                                                         )}
                                                     </div>
                                                 ))}
-                                            {supplierNames.filter(supplier => supplier.toLowerCase().includes(supplierInput.toLowerCase())).length === 0 && (
+                                            {supplierCompanies.filter(supplier => supplier.toLowerCase().includes(supplierInput.toLowerCase())).length === 0 && (
                                                 <div className="px-3 py-2 text-gray-500 italic">
                                                     No suppliers found
                                                 </div>
@@ -839,18 +876,54 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                             </div>
                         </div>
                     )}
-                    {/* Supplier Contact Row */}
+                    {/* Supplier Name Row */}
                     {hasSupplier && (
                         <div className="modal-row">
-                            <span className="modal-row-label">Supplier Contact</span>
+                            <span className="modal-row-label">Supplier Name</span>
                             <div className="modal-row-content">
                                 <div
-                                    ref={supplierContactRef}
-                                    className="supplier-contact-textarea"
+                                    ref={supplierNameRef}
+                                    className="supplier-name-textarea"
                                     contentEditable
                                     suppressContentEditableWarning
                                     onInput={(e) => {
-                                        setSupplierContact((e.target as HTMLDivElement).innerHTML);
+                                        setSupplierName((e.target as HTMLDivElement).innerHTML);
+                                    }}
+                                >
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {/* Supplier Number Row */}
+                    {hasSupplier && (
+                        <div className="modal-row">
+                            <span className="modal-row-label">Supplier Number</span>
+                            <div className="modal-row-content">
+                                <div
+                                    ref={supplierNumberRef}
+                                    className="supplier-number-textarea"
+                                    contentEditable
+                                    suppressContentEditableWarning
+                                    onInput={(e) => {
+                                        setSupplierNumber((e.target as HTMLDivElement).innerHTML);
+                                    }}
+                                >
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {/* Supplier Email Row */}
+                    {hasSupplier && (
+                        <div className="modal-row">
+                            <span className="modal-row-label">Supplier Email</span>
+                            <div className="modal-row-content">
+                                <div
+                                    ref={supplierEmailRef}
+                                    className="supplier-email-textarea"
+                                    contentEditable
+                                    suppressContentEditableWarning
+                                    onInput={(e) => {
+                                        setSupplierEmail((e.target as HTMLDivElement).innerHTML);
                                     }}
                                 >
                                 </div>
