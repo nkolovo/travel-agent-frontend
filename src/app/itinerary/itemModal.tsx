@@ -36,8 +36,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     );
     const [retailPrice, setRetailPrice] = useState(item?.retailPrice || activity?.retailPrice || 0);
     const [netPrice, setNetPrice] = useState(item?.netPrice || activity?.netPrice || 0);
-    const [image, setImage] = useState(item?.imageUrl || activity?.imageUrl || "");
-    const [imageName, setImageName] = useState(item?.imageName || activity?.imageName || "");
+    const [images, setImages] = useState<string[]>([]);
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [imageNames, setImageNames] = useState<string[]>(item?.imageNames || activity?.imageNames || []);
     const [activeFormats, setActiveFormats] = useState<string[]>([]);
     const titleRef = useRef<HTMLDivElement>(null);
     const notesRef = useRef<HTMLDivElement>(null);
@@ -212,8 +213,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             }
             retailPriceRef.current!.innerHTML = String(item ? item.retailPrice ?? "0" : activity?.retailPrice ?? "0");
             netPriceRef.current!.innerHTML = String(item ? item.netPrice ?? "0" : activity?.netPrice ?? "0");
-            if (item?.imageName || activity?.imageName)
-                loadImageFromGCS();
+            if (item?.imageNames || activity?.imageNames)
+                loadImagesFromGCS();
 
         }
         document.addEventListener("selectionchange", handleSelectionChange);
@@ -357,7 +358,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 return res.json()
             })
             .then(supplier => {
-                console.log(supplier);
                 setSupplierContact(supplier.contact);
                 setSupplierUrl(supplier.url);
                 // Update the contentEditable divs
@@ -399,7 +399,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 supplierUrl,
                 retailPrice,
                 netPrice,
-                imageName
+                imageNames
             } as Item;
         } else if (activity && !item) { // If editing an existing activity
             isActivity = true;
@@ -415,7 +415,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 supplierUrl,
                 retailPrice,
                 netPrice,
-                imageName
+                imageNames
             } as Activity;
         } else {
             objectToSave = {
@@ -429,11 +429,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 supplierUrl,
                 retailPrice,
                 netPrice,
-                imageName
+                imageNames
             } as Item;
         }
 
-        console.log(objectToSave);
         if (isActivity)
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/saveDateItem/${activity!.date.id}/item/${activity!.item.id}`, {
                 method: "POST",
@@ -465,6 +464,32 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 })
                 .catch(error => { console.warn(objectToSave), console.warn("Error saving changes to item ", error) })
 
+        // Upload new images to backend (send all files at once)
+        if (imageFiles.length > 0) {
+            const formData = new FormData();
+
+            // Append all files with the same key name for array handling
+            imageFiles.forEach((file, index) => {
+                formData.append("files", file);
+            });
+
+            try {
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/items/${objectToSave.id}/upload-image`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                        },
+                        body: formData,
+                    }
+                );
+                if (!response.ok) throw new Error("Could not save images");
+            } catch (error) {
+                console.error("Error uploading images:", error);
+            }
+        }
+
         if (closeModalItem)
             closeModalItem(objectToSave as Item);
         else if (closeModalActivity)
@@ -472,32 +497,51 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     }
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImage(reader.result as string); // Set the cover image state
-            };
-            reader.readAsDataURL(file);
-            setImageName(file.name);
+        const files = event.target.files;
+        if (files && files.length > 0) {
+            const newFiles: File[] = [];
+            const newImages: string[] = [];
+            const newImageNames: string[] = [];
+
+            // Process all selected files
+            Array.from(files).forEach((file) => {
+                newFiles.push(file);
+                newImageNames.push(file.name);
+
+                // Create base64 string for display
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    newImages.push(reader.result as string);
+                    // Update state only after all files are processed
+                    if (newImages.length === files.length) {
+                        setImageFiles(prev => [...prev, ...newFiles]);
+                        setImages(prev => [...prev, ...newImages]);
+                        setImageNames(prev => [...prev, ...newImageNames]);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
         }
     }
 
-    const loadImageFromGCS = async () => {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/images/signed-url/${imageName}`, {
-            method: "GET",
+    const loadImagesFromGCS = async () => {
+        const imageNames = item ? item.imageNames : activity ? activity.imageNames : [];
+        if (imageNames!.length === 0) return;
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/images/multiple-signed-urls`, {
+            method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${localStorage.getItem("token")}`,
             },
+            body: JSON.stringify(imageNames),
         })
             .then(res => {
                 if (!res.ok)
                     throw new Error(`Request error: ${res.status}`);
-                return res.text();
+                return res.json();
             })
-            .then(signedUrl => {
-                setImage(signedUrl);
+            .then(signedUrls => {
+                setImages([...images, ...signedUrls]);
             })
             .catch(error => { console.warn(), console.warn("Error retrieving the image. ", error) })
     }
@@ -885,16 +929,22 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 id="item-image-input"
                                 type="file"
                                 accept="image/*"
+                                multiple
                                 className="hidden"
                                 onChange={handleImageUpload}
                             />
-                            {/* Show image below the button if it exists */}
-                            {image && (
-                                <img
-                                    src={image}
-                                    alt="Item"
-                                    style={{ maxWidth: "900px", maxHeight: "900px", borderRadius: "8px" }}
-                                />
+                            {/* Show all images below the button if they exist */}
+                            {images.length > 0 && (
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
+                                    {images.map((image, index) => (
+                                        <img
+                                            key={index}
+                                            src={image}
+                                            alt={`Item ${index + 1}`}
+                                            style={{ maxWidth: "400px", maxHeight: "400px", borderRadius: "8px" }}
+                                        />
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </div>

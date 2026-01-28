@@ -57,8 +57,8 @@ export interface Item {
   retailPrice: number;
   netPrice: number;
   priority?: number;
-  imageName?: string;
-  imageUrl?: string;
+  imageNames?: string[];
+  imageUrls?: string[];
   supplierId?: number;
   supplierName?: string;
   supplierContact?: string;
@@ -77,8 +77,8 @@ export interface Activity {
   retailPrice: number;
   netPrice: number;
   priority: number;
-  imageName?: string;
-  imageUrl?: string;
+  imageNames?: string[];
+  imageUrls?: string[];
   supplierId?: number;
   supplierName?: string;
   supplierContact?: string;
