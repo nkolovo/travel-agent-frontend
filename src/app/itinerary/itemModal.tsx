@@ -48,7 +48,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
 
     if (!isOpen) return null; // Do not render if isOpen is false
 
-    const categories = ["Activity", "Lodging", "Flight", "Transportation", "Cruise", "Info"];
+    const categories = ["Activity", "Lodging", "Flight", "Transportation", "Ferry", "Cruise", "Info"];
 
     const handleFormat = (command: string, value?: string) => {
         // Ensure the contentEditable div is focused
@@ -313,6 +313,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                     setSupplierNames([...supplierNames, newSupplierName]);
                     setSupplierInput(newSupplierName);
                     setSupplierName(newSupplierName);
+                    setSupplierContact(newSupplierContact);
+                    supplierContactRef.current!.innerHTML = newSupplierContact;
+                    setSupplierUrl(newSupplierUrl);
+                    supplierUrlRef.current!.innerHTML = newSupplierUrl;
                 })
                 .catch(error => { console.warn("Error saving new supplier. ", error) })
         } else {

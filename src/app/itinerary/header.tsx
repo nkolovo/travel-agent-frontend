@@ -151,7 +151,7 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
   };
 
   return (
-    <div className="relative w-full h-60 bg-gray-300 rounded-lg overflow-hidden shadow-md">
+    <div className="relative w-full h-32 bg-gray-300 rounded-lg overflow-hidden shadow-md">
       {/* Cover Image */}
       {coverImage ? (
         <img
@@ -160,13 +160,13 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
           className="w-full h-full object-cover" // Ensures the image fits the container without cropping
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gray-400 text-white">
+        <div className="w-full h-full flex items-center justify-center bg-gray-400 text-white text-sm">
           No Cover Image
         </div>
       )}
 
       {/* Overlaying Title & Edit/Save/Cancel Buttons */}
-      <div className="absolute top-6 left-6 flex items-center space-x-3">
+      <div className="absolute top-2 left-4 flex items-center space-x-2">
         {isEditing ? (
           // If in edit mode, show an input field
           <input
@@ -174,47 +174,47 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
             value={title}
             onChange={handleTitleChange}
             onKeyDown={handleKeyDown}
-            className="text-white text-3xl font-bold drop-shadow-md bg-transparent border-b-2 border-white focus:outline-none"
+            className="text-white text-lg font-bold drop-shadow-md bg-transparent border-b-2 border-white focus:outline-none max-w-[300px]"
           />
         ) : (
           // If in view mode, just display the title
-          <h1 className="text-white text-3xl font-bold drop-shadow-md">{title}</h1>
+          <h1 className="text-white text-lg font-bold drop-shadow-md break-words max-w-[300px]">{title}</h1>
         )}
 
         {isEditing ? (
-          <>
+          <div className="flex space-x-1">
             {/* Show Save and Cancel buttons when editing */}
-            <button onClick={saveTitle} className="text-white text-lg hover:text-gray-200">
+            <button onClick={saveTitle} className="text-white text-xs hover:text-gray-200 bg-green-600 px-2 py-1 rounded">
               Save
             </button>
-            <button onClick={cancelEdit} className="text-white text-lg hover:text-gray-200">
+            <button onClick={cancelEdit} className="text-white text-xs hover:text-gray-200 bg-red-600 px-2 py-1 rounded">
               Cancel
             </button>
-          </>
+          </div>
         ) : (
           // Show Edit button when not editing
           <button onClick={toggleEditMode}>
-            <FiEdit className="text-white text-2xl hover:text-gray-200 transition" />
+            <FiEdit className="text-white text-base hover:text-gray-200 transition" />
           </button>
         )}
       </div>
 
       {/* Total Trip Cost (Under Title) */}
-      <p className="absolute top-16 left-6 text-white text-xl drop-shadow-md">
+      <p className="absolute top-8 left-4 text-white text-sm drop-shadow-md">
         Total Cost: €{tripCost}
       </p>
 
-      {/* Total Trip Cost (Under Title) */}
-      <p className="absolute top-24 left-6 text-white text-xl drop-shadow-md">
+      {/* Net Cost (Under Trip Cost) */}
+      <p className="absolute top-12 left-4 text-white text-sm drop-shadow-md">
         Net Cost: €{netCost}
       </p>
 
       {/* Change Cover Photo Button (Bottom Right) */}
       <button
-        className="absolute bottom-4 right-4 bg-white bg-opacity-50 p-2 rounded-full hover:bg-opacity-75 transition"
+        className="absolute bottom-2 right-2 bg-white bg-opacity-50 p-1 rounded-full hover:bg-opacity-75 transition"
         onClick={() => document.getElementById("cover-image-input")?.click()}
       >
-        <FiCamera className="text-gray-700 text-2xl" />
+        <FiCamera className="text-gray-700 text-base" />
       </button>
 
       {/* Hidden File Input */}

@@ -276,8 +276,8 @@ export default function ItineraryPage({ id }: { id: string }) {
                     <div className="w-full">
                         <Header itineraryId={itineraryId} retailPrice={itineraryTripCost} netPrice={itineraryNetCost} />
                     </div>
-                    <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
-                        <div className="h-[calc(100vh-20rem)] flex flex-col flex-1 overflow-hidden col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-3 xl:col-span-3 2xl:col-span-3">
+                    <div className="grid grid-cols-12 gap-2 flex-1 overflow-hidden">
+                        <div className="h-[calc(100vh-10rem)] flex flex-col flex-1 overflow-hidden col-span-3">
                             <DateList
                                 itineraryId={itineraryId}
                                 dates={dates}
@@ -288,11 +288,11 @@ export default function ItineraryPage({ id }: { id: string }) {
                             />
                         </div>
 
-                        <div className="h-[calc(100vh-20rem)] flex flex-col flex-1 col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-6 xl:col-span-6 2xl:col-span-6 flex flex-col overflow-y-auto">
+                        <div className="h-[calc(100vh-10rem)] flex flex-col flex-1 col-span-6 overflow-y-auto">
                             <DateSummary date={selectedDate} activities={activities} onChange={handleActivityUpdate} />
                         </div>
 
-                        <div className="h-[calc(100vh-20rem)] col-span-4 sm:col-span-4 md:col-span-4 lg:col-span-3 xl:col-span-3 2xl:col-span-3 flex flex-col overflow-y-auto">
+                        <div className="h-[calc(100vh-10rem)] col-span-3 flex flex-col overflow-y-auto">
                             <ItemList items={items} onSelectItem={handleSelectItem} onChange={handleItemUpdate} />
                         </div>
                     </div>
