@@ -68,52 +68,57 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
     return (
         <div className="flex flex-col h-screen overflow-hidden">
             {/* Header Section */}
-            <header className="p-4 bg-gray-100 shadow-md flex justify-between items-center">
+            <header className="p-2 bg-gray-100 shadow-md flex justify-between items-center">
                 {/* Left Section: Back to Dashboard Button */}
                 <button
                     onClick={() => router.push("/dashboard")}
                     className="flex items-center text-gray-600 hover:text-gray-800 transition-all duration-200"
                 >
-                    <HiArrowNarrowLeft className="mr-2 text-2xl sm:text-xl md:text-2xl lg:text-3xl" />
-                    <span className="text-xl sm:text-lg md:text-xl lg:text-2xl font-medium">Dashboard</span>
+                    <HiArrowNarrowLeft className="mr-2 text-lg" />
+                    <span className="text-base font-medium">Dashboard</span>
                 </button>
 
                 {/* Middle Section: Query Parameters (only rendered if queryParams exist) */}
                 {queryParams.length > 0 && (
-                    <section className="flex-1 flex justify-center space-x-4 text-xl sm:text-lg md:text-xl lg:text-2xl font-medium text-gray-600">
+                    <section className="flex-1 flex justify-center space-x-3 text-sm font-medium text-gray-600 px-2 overflow-hidden">
                         {/* Display each query parameter side by side */}
-                        {queryParams}
+                        <div className="flex flex-wrap justify-center items-center gap-2">
+                            {queryParams.map((param, index) => (
+                                <div key={index} className="flex items-center space-x-1 whitespace-nowrap">
+                                    {param}
+                                </div>
+                            ))}
+                        </div>
                     </section>
                 )}
 
                 {/* Right Section: Action Buttons */}
-                <div className="flex space-x-4">
+                <div className="flex space-x-2">
                     {/* Preview Button */}
                     <button
-                        className="flex items-center text-gray-600 hover:text-gray-800 transition-all duration-200"
+                        className="flex items-center text-gray-600 hover:text-gray-800 transition-all duration-200 p-1"
                         title="Preview Itinerary"
                         onClick={() => previewItinerary()}
                     >
-                        <HiEye className="text-2xl" />
+                        <HiEye className="text-lg" />
                     </button>
 
                     {/* PDF Button */}
                     <button
-                        className="flex items-center text-gray-600 hover:text-gray-800 transition-all duration-200"
+                        className="flex items-center text-gray-600 hover:text-gray-800 transition-all duration-200 p-1"
                         title="Generate PDF"
                         onClick={() => generatePdf()}
                     >
-                        <HiDocumentText className="text-2xl" />
+                        <HiDocumentText className="text-lg" />
                     </button>
-
 
                     {/* Send Button */}
                     <button
-                        className="flex items-center text-gray-600 hover:text-gray-800 transition-all duration-200"
+                        className="flex items-center text-gray-600 hover:text-gray-800 transition-all duration-200 p-1"
                         title="Send to lead"
                         onClick={() => sendItineraryToLead()}
                     >
-                        <HiPaperAirplane className="text-2xl" />
+                        <HiPaperAirplane className="text-lg" />
                     </button>
                 </div>
             </header>

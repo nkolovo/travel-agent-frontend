@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Date } from './types/types';
-import { FiEdit, FiX } from 'react-icons/fi';
+import { FiEdit, FiX, FiCalendar } from 'react-icons/fi';
 
 interface DateListProps {
   itineraryId: number;
@@ -107,13 +107,13 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
           });
         }}
         disabled={isAddingDay}
-        className={`mb-4 px-4 py-2 rounded text-white ${isAddingDay ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500"}`}
+        className={`mb-2 px-3 py-1 rounded text-white text-sm ${isAddingDay ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
       >
         + New Day
       </button>
 
       {/* Scrollable List */}
-      <ul className="flex-1 min-h-0 overflow-y-auto bg-gray-100 p-4">
+      <ul className="flex-1 min-h-0 overflow-y-auto bg-gray-100 p-2">
         {dates.map((date, index) => (
           <li
             key={index}
@@ -124,33 +124,36 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
                 setSelectedDate(date);
               }
             }}
-            className={`${addingIndex === index ? 'bg-gray-300 cursor-not-allowed opacity-60' : 'cursor-pointer'} p-4 rounded-lg mt-4 transition-all duration-200 ease-in-out shadow-md
+            className={`${addingIndex === index ? 'bg-gray-300 cursor-not-allowed opacity-60' : 'cursor-pointer'} p-2 rounded-lg mt-2 transition-all duration-200 ease-in-out shadow-sm
                         ${selectedDate === date ? 'bg-blue-200' : 'hover:bg-gray-200'}`}
           >
-            <div className="flex items-center justify-between w-full space-x-2">
-              <div className="flex items-center space-x-2 flex-grow">
-                <input
-                  id={`date-input-${index}`}
-                  type="text"
-                  value={date.name}
-                  onChange={(e) => handleNameChange(index, e.target.value)}
-                  className="bg-transparent border-none font-bold text-xl p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    minWidth: '50px',
-                    wordWrap: 'break-word',
-                    whiteSpace: 'normal',
-                    fontSize: 'clamp(0.875rem, 2vw, 1.25rem)',
-                  }}
-                />
-                <button
+            <div className="flex items-center justify-between w-full space-x-1">
+              <div className="flex-1 relative">
+                <div
+                  className="text-md rounded-lg cursor-pointer hover:bg-gray-50 focus-within:ring-1 focus-within:ring-blue-500 flex items-center space-x-2"
                   onClick={(e) => {
                     e.stopPropagation();
-                    document.getElementById(`date-input-${index}`)?.focus();
+                    const input = e.currentTarget.querySelector('input') as HTMLInputElement;
+                    input.focus();
+                    input.showPicker();
                   }}
-                  className="text-gray-600 hover:text-blue-600 transition duration-150"
                 >
-                  <FiEdit />
-                </button>
+                  <FiCalendar className="flex-shrink-0" />
+                  <span>
+                    {new Date(date.date + 'T00:00:00').toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                  <input
+                    type="date"
+                    value={date.date}
+                    disabled={isAddingDay}
+                    onChange={(e) => handleDateChange(index, e.target.value)}
+                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                  />
+                </div>
               </div>
               <button
                 onClick={(e) => {
@@ -159,20 +162,36 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
                     onRemoveDate(date);
                   }
                 }}
-                className="text-red-600 hover:text-red-800 transition duration-150 text-2xl"
+                className="text-red-600 hover:text-red-800 transition duration-150 text-lg flex-shrink-0"
               >
                 <FiX />
               </button>
             </div>
 
-            <div className="mt-2">
-              <input
-                type="date"
-                value={date.date}
-                disabled={isAddingDay}
-                onChange={(e) => handleDateChange(index, e.target.value)}
-                className="bg-transparent border-none w-full p-2 rounded-lg mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="mt-3">
+              <div className="flex items-center space-x-1 flex-grow min-w-0 relative">
+                <div 
+                  className="flex items-center space-x-1 p-1 rounded-lg cursor-pointer hover:bg-gray-50 focus-within:ring-1 focus-within:ring-blue-500 flex-grow min-w-0"
+                  onClick={(e) => {
+                    const input = e.currentTarget.querySelector('input') as HTMLInputElement;
+                    input.focus();
+                    input.select();
+                  }}
+                >
+                  <FiEdit className="text-gray-500 text-xs flex-shrink-0" />
+                  <input
+                    id={`date-input-${index}`}
+                    type="text"
+                    value={date.name}
+                    onChange={(e) => handleNameChange(index, e.target.value)}
+                    className="pl-5 absolute inset-0 focus:opacity-100 w-full h-full cursor-pointer bg-transparent border-none font-semibold text-sm p-1 focus:outline-none"
+                    style={{
+                      wordWrap: 'break-word',
+                      whiteSpace: 'normal',
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </li>
         ))}
