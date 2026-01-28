@@ -37,18 +37,20 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     );
     const [retailPrice, setRetailPrice] = useState(item?.retailPrice || activity?.retailPrice || 0);
     const [netPrice, setNetPrice] = useState(item?.netPrice || activity?.netPrice || 0);
+    const [notes, setNotes] = useState(item?.notes || activity?.notes || "");
     const [images, setImages] = useState<string[]>([]);
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [imageNames, setImageNames] = useState<string[]>(item?.imageNames || activity?.imageNames || []);
     const [activeFormats, setActiveFormats] = useState<string[]>([]);
     const titleRef = useRef<HTMLDivElement>(null);
-    const notesRef = useRef<HTMLDivElement>(null);
+    const descriptionRef = useRef<HTMLDivElement>(null);
     const supplierNameRef = useRef<HTMLDivElement>(null);
     const supplierNumberRef = useRef<HTMLDivElement>(null);
     const supplierEmailRef = useRef<HTMLDivElement>(null);
     const supplierUrlRef = useRef<HTMLDivElement>(null);
     const retailPriceRef = useRef<HTMLDivElement>(null);
     const netPriceRef = useRef<HTMLDivElement>(null);
+    const notesRef = useRef<HTMLDivElement>(null);
 
     if (!isOpen) return null; // Do not render if isOpen is false
 
@@ -56,8 +58,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
 
     const handleFormat = (command: string, value?: string) => {
         // Ensure the contentEditable div is focused
-        if (notesRef.current) {
-            notesRef.current.focus();
+        if (descriptionRef.current) {
+            descriptionRef.current.focus();
         }
 
         const selection = window.getSelection();
@@ -203,7 +205,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     useEffect(() => {
         if (item || activity) {
             titleRef.current!.innerHTML = item ? item.name : activity!.name;
-            notesRef.current!.innerHTML = item ? item.description : activity!.description;
+            descriptionRef.current!.innerHTML = item ? item.description : activity!.description;
             // Set supplier input for dropdown
             const existingSupplierCompany = item?.supplierCompany || activity?.supplierCompany || "";
             setSupplierInput(existingSupplierCompany);
@@ -428,6 +430,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 supplierUrl,
                 retailPrice,
                 netPrice,
+                notes,
                 imageNames
             } as Item;
         } else if (activity && !item) { // If editing an existing activity
@@ -446,6 +449,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 supplierUrl,
                 retailPrice,
                 netPrice,
+                notes,
                 imageNames
             } as Activity;
         } else {
@@ -462,9 +466,12 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 supplierUrl,
                 retailPrice,
                 netPrice,
+                notes,
                 imageNames
             } as Item;
         }
+
+        console.log(objectToSave);
 
         if (isActivity)
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/saveDateItem/${activity!.date.id}/item/${activity!.item.id}`, {
@@ -722,11 +729,11 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                             </div>
                         </div>
                     </div>
-                    {/* Notes Row */}
+                    {/* Description Row */}
                     <div className="modal-row">
-                        <span className="modal-row-label">Notes</span>
+                        <span className="modal-row-label">Description</span>
                         <div className="modal-row-content">
-                            <div className="notes-toolbar">
+                            <div className="description-toolbar">
                                 <button
                                     className={activeFormats.includes("bold") ? "active" : ""}
                                     onClick={() => handleFormat("bold")}
@@ -759,8 +766,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 </button>
                             </div>
                             <div
-                                ref={notesRef}
-                                className="notes-textarea"
+                                ref={descriptionRef}
+                                className="description-textarea"
                                 contentEditable
                                 suppressContentEditableWarning
                                 onPaste={handlePaste}
@@ -975,6 +982,59 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 suppressContentEditableWarning
                                 onInput={(e) => {
                                     setNetPrice(Number((e.target as HTMLDivElement).innerHTML));
+                                }}
+                            >
+                            </div>
+                        </div>
+                    </div>
+                    {/* Notes Row */}
+                    <div className="modal-row">
+                        <span className="modal-row-label">Notes</span>
+                        <div className="modal-row-content">
+                            <div className="notes-toolbar">
+                                <button
+                                    className={activeFormats.includes("bold") ? "active" : ""}
+                                    onClick={() => handleFormat("bold")}
+                                >
+                                    <FaBold />
+                                </button>
+                                <button
+                                    className={activeFormats.includes("italic") ? "active" : ""}
+                                    onClick={() => handleFormat("italic")}
+                                >
+                                    <FaItalic />
+                                </button>
+                                <button
+                                    className={activeFormats.includes("underline") ? "active" : ""}
+                                    onClick={() => handleFormat("underline")}
+                                >
+                                    <u>U</u>
+                                </button>
+                                <button
+                                    className={activeFormats.includes("strikeThrough") ? "active" : ""}
+                                    onClick={() => handleFormat("strikeThrough")}
+                                >
+                                    <s>abc</s>
+                                </button>
+                                <button
+                                    className={activeFormats.includes("createLink") ? "active" : ""}
+                                    onClick={() => handleFormat("createLink", prompt("Enter URL") || "")}
+                                >
+                                    <FaLink />
+                                </button>
+                            </div>
+                            <div
+                                ref={notesRef}
+                                className="notes-textarea"
+                                contentEditable
+                                suppressContentEditableWarning
+                                onPaste={handlePaste}
+                                onInput={(e) => {
+                                    // Get the HTML content
+                                    let html = (e.target as HTMLDivElement).innerHTML;
+                                    html = html.replace(/<br>/g, "<br />");
+                                    html = html.replace("&amp;", "&#38;");
+                                    setNotes(html);
                                 }}
                             >
                             </div>
