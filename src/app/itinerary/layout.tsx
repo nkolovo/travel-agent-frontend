@@ -24,9 +24,26 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
         if (key == 'id')
             return
         const customKey = customNames[key] || key; // Use custom name if available, otherwise fallback to original key
+
+        // Format createdDate from YYYY-MM-DD to Month Day, Year
+        let displayValue = value;
+        if (key === 'createdDate' && value) {
+            try {
+                const date = new Date(value);
+                displayValue = date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            } catch (error) {
+                // If date parsing fails, keep original value
+                displayValue = value;
+            }
+        }
+
         return (
             <div key={key} className="flex items-center space-x-2">
-                <strong>{customKey}:</strong> <span>{value}</span>
+                <strong>{customKey}:</strong> <span>{displayValue}</span>
             </div>
         );
     });

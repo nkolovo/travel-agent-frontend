@@ -215,10 +215,16 @@ export default function Dashboard() {
           <div className="flex flex-wrap sm:space-y-4 md:space-y-4 justify-between items-center mb-6 p-4 bg-gray-100 rounded-lg shadow-md overflow-x-auto">
             <div className="flex space-x-4">
               <input type="text" id="agent" name="agent" value={newItinerary.agent} readOnly className="p-2 border rounded bg-gray-200" />
-              <input type="date" id="createdDate" name="createdDate" value={newItinerary.createdDate} readOnly className="p-2 border rounded bg-gray-200" />
+              <input type="text" id="createdDate" name="createdDate" value={new Date(newItinerary.createdDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} readOnly className="p-2 border rounded bg-gray-200" />
               <input type="text" id="reservationNumber" name="reservationNumber" value={newItinerary.reservationNumber} readOnly className="p-2 border rounded bg-gray-200" />
-              <input type="text" id="leadName" name="leadName" placeholder="Lead Name" value={newItinerary.leadName} onKeyDown={handleKeyDownItinerary} onChange={handleNewItineraryChange} className="p-2 border rounded" />
-              <input type="number" id="numTravelers" name="numTravelers" placeholder="Number of Adults" value={newItinerary.numTravelers} onKeyDown={handleKeyDownItinerary} onChange={handleNewItineraryChange} min="1" className="p-2 border rounded" />
+              <div className="flex flex-col">
+                <input type="text" id="leadName" name="leadName" placeholder="Lead Name" value={newItinerary.leadName} onKeyDown={handleKeyDownItinerary} onChange={handleNewItineraryChange} className="p-2 border rounded" />
+                <span className="text-xs text-gray-500 mt-1">Last / First, Middle</span>
+              </div>
+              <div className="flex flex-col">
+                <input type="number" id="numTravelers" name="numTravelers" placeholder="Number of Adults" value={newItinerary.numTravelers} onKeyDown={handleKeyDownItinerary} onChange={handleNewItineraryChange} min="1" className="p-2 border rounded" />
+                <span className="text-xs text-gray-500 mt-1">Number of Travelers</span>
+              </div>
             </div>
             <button className={`bg-blue-500 text-white px-4 py-2 rounded ${newItinerary.leadName && newItinerary.numTravelers > 0 ? "bg-blue-500 text-white" : "bg-gray-400 cursor-not-allowed"}`} onClick={handleAddItinerary}>Add Itinerary</button>
           </div>
@@ -240,7 +246,7 @@ export default function Dashboard() {
                 {Object.keys(columnMapping).map((col) => (
                   <th
                     key={col}
-                    className="p-2 border cursor-pointer"
+                    className="p-2 border cursor-pointer text-sm"
                     onClick={() => handleSort(columnMapping[col])}
                   >
                     {col} {sortColumn === columnMapping[col] ? (sortOrder === "asc" ? "▲" : "▼") : ""}
@@ -260,16 +266,25 @@ export default function Dashboard() {
                     let value = itinerary[property]; // Get the value from the itinerary object
 
                     // Format values properly
+                    if (property === "createdDate" || property === "editedDate" || property === "arrivalDate" || property === "departureDate") {
+                      value = value ? new Date(value as string).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      }) : "N/A";
+                    }
                     if (property === "tripPrice") {
+                      value = value ? `$${value.toLocaleString()}` : "N/A";
+                    } if (property === "netPrice") {
                       value = value ? `$${value.toLocaleString()}` : "N/A";
                     } else if (property === "docsSent") {
                       value = value ? "Yes" : "No";
-                      return <td key={col} className={`p-2 border ${value === "Yes" ? 'bg-green-500' : 'bg-red-500 text-white'}`}>{value.toString()}</td>;
+                      return <td key={col} className={`p-2 border text-sm ${value === "Yes" ? 'bg-green-500' : 'bg-red-500 text-white'}`}>{value.toString()}</td>;
                     } else {
                       value = value ?? "N/A";
                     }
 
-                    return <td key={col} className="p-2 border">{value.toString()}</td>;
+                    return <td key={col} className="p-2 border text-sm">{value.toString()}</td>;
                   })}
                 </tr>
               ))}
