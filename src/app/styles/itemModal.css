@@ -146,6 +146,7 @@
   cursor: pointer;
 }
 
+.title-toolbar
 .description-toolbar,
 .notes-toolbar {
   display: flex;
@@ -153,6 +154,7 @@
   margin-bottom: 0.5rem;
 }
 
+.title-toolbar button,
 .description-toolbar button,
 .notes-toolbar button {
   background: none;
@@ -163,11 +165,13 @@
   transition: color 0.2s;
 }
 
+.title-toolbar button:hover,
 .description-toolbar button:hover,
 .notes-toolbar button:hover {
   color: #007bff;
 }
 
+.title-toolbar button.active,
 .description-toolbar button.active,
 .notes-toolbar button.active {
   background-color: #007bff;

@@ -44,6 +44,9 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [imageNames, setImageNames] = useState<string[]>(item?.imageNames || activity?.imageNames || []);
     const [activeFormats, setActiveFormats] = useState<string[]>([]);
+    const [activeTitleFormats, setActiveTitleFormats] = useState<string[]>([]);
+    const [activeDescriptionFormats, setActiveDescriptionFormats] = useState<string[]>([]);
+    const [activeNotesFormats, setActiveNotesFormats] = useState<string[]>([]);
     const titleRef = useRef<HTMLDivElement>(null);
     const descriptionRef = useRef<HTMLDivElement>(null);
     const supplierNameRef = useRef<HTMLDivElement>(null);
@@ -58,10 +61,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
 
     const categories = ["Activity", "Lodging", "Flight", "Transportation", "Ferry", "Cruise", "Info"];
 
-    const handleFormat = (command: string, value?: string) => {
+    const handleFormat = (command: string, targetRef: React.RefObject<HTMLDivElement | null>, setActiveFormats: React.Dispatch<React.SetStateAction<string[]>>, value?: string) => {
         // Ensure the contentEditable div is focused
-        if (descriptionRef.current) {
-            descriptionRef.current.focus();
+        if (targetRef.current) {
+            targetRef.current.focus();
         }
 
         const selection = window.getSelection();
@@ -92,15 +95,21 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                     range.insertNode(link);
                 }
                 break;
+            case "highlight":
+                document.execCommand("hiliteColor", false, value || "yellow");
+                break;
+            case "removeHighlight":
+                document.execCommand("hiliteColor", false, "transparent");
+                break;
             default:
                 break;
         }
 
-        updateActiveFormats(); // Update the active formats after applying the command
+        updateActiveFormats(setActiveFormats); // Update the active formats after applying the command
     };
 
     // Function to update the active formats based on the current selection
-    const updateActiveFormats = () => {
+    const updateActiveFormats = (setActiveFormats: React.Dispatch<React.SetStateAction<string[]>>) => {
         const formats = [];
         if (document.queryCommandState("bold")) formats.push("bold");
         if (document.queryCommandState("italic")) formats.push("italic");
@@ -151,7 +160,15 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
 
     // Event listener for selection changes
     const handleSelectionChange = () => {
-        updateActiveFormats();
+        // Update active formats for the currently focused field
+        const activeElement = document.activeElement;
+        if (activeElement === titleRef.current) {
+            updateActiveFormats(setActiveTitleFormats);
+        } else if (activeElement === descriptionRef.current) {
+            updateActiveFormats(setActiveDescriptionFormats);
+        } else if (activeElement === notesRef.current) {
+            updateActiveFormats(setActiveNotesFormats);
+        }
     };
 
     // Get countries on mount
@@ -476,8 +493,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             } as Item;
         }
 
-        console.log(objectToSave);
-
         if (isActivity)
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/saveDateItem/${activity!.date.id}/item/${activity!.item.id}`, {
                 method: "POST",
@@ -511,7 +526,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
 
         // Upload PDF attachment to backend (only if it's a new File, not an existing URL)
         if (pdfAttachment && pdfAttachment instanceof File) {
-            console.log("Uploading new PDF file:", pdfAttachment);
             const formData = new FormData();
             formData.append("file", pdfAttachment);
 
@@ -533,8 +547,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         }
 
         // Upload new images to backend (send all files at once)
-        if (imageFiles.length > 0) {
-            console.log("uploading Images");
+        if (imageFiles.length > 0) {;
             const formData = new FormData();
 
             // Append all files with the same key name for array handling
@@ -604,7 +617,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     }
 
     const loadPdfFromGCS = async () => {
-        console.log("Loading PDF from GCS");
         const pdfNameToLoad = activity ? activity.pdfName : "";
         if (!pdfNameToLoad) return;
         await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/date-items/signed-url/${pdfNameToLoad}`, {
@@ -774,6 +786,70 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                     <div className="modal-row">
                         <span className="modal-row-label">Title</span>
                         <div className="modal-row-content">
+                            <div className="title-toolbar">
+                                <button
+                                    className={activeTitleFormats.includes("bold") ? "active" : ""}
+                                    onClick={() => handleFormat("bold", titleRef, setActiveTitleFormats)}
+                                >
+                                    <FaBold />
+                                </button>
+                                <button
+                                    className={activeTitleFormats.includes("italic") ? "active" : ""}
+                                    onClick={() => handleFormat("italic", titleRef, setActiveTitleFormats)}
+                                >
+                                    <FaItalic />
+                                </button>
+                                <button
+                                    className={activeTitleFormats.includes("underline") ? "active" : ""}
+                                    onClick={() => handleFormat("underline", titleRef, setActiveTitleFormats)}
+                                >
+                                    <u>U</u>
+                                </button>
+                                <button
+                                    className={activeTitleFormats.includes("strikeThrough") ? "active" : ""}
+                                    onClick={() => handleFormat("strikeThrough", titleRef, setActiveTitleFormats)}
+                                >
+                                    <s>abc</s>
+                                </button>
+                                <button
+                                    className={activeTitleFormats.includes("createLink") ? "active" : ""}
+                                    onClick={() => handleFormat("createLink", titleRef, setActiveTitleFormats, prompt("Enter URL") || "")}
+                                >
+                                    <FaLink />
+                                </button>
+                                <button
+                                    className="highlight-red"
+                                    onClick={() => handleFormat("highlight", titleRef, setActiveTitleFormats, "#ffcccc")}
+                                    style={{ backgroundColor: "#ffcccc", border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Red Highlight"
+                                >
+                                    Red
+                                </button>
+                                <button
+                                    className="highlight-yellow"
+                                    onClick={() => handleFormat("highlight", titleRef, setActiveTitleFormats, "#ffff99")}
+                                    style={{ backgroundColor: "#ffff99", border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Yellow Highlight"
+                                >
+                                    Yellow
+                                </button>
+                                <button
+                                    className="highlight-blue"
+                                    onClick={() => handleFormat("highlight", titleRef, setActiveTitleFormats, "#cce5ff")}
+                                    style={{ backgroundColor: "#cce5ff", border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Blue Highlight"
+                                >
+                                    Blue
+                                </button>
+                                <button
+                                    className="remove-highlight"
+                                    onClick={() => handleFormat("removeHighlight", titleRef, setActiveTitleFormats)}
+                                    style={{ border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Remove Highlight"
+                                >
+                                    Remove
+                                </button>
+                            </div>
                             <div
                                 ref={titleRef}
                                 className="title-textarea"
@@ -796,34 +872,66 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                         <div className="modal-row-content">
                             <div className="description-toolbar">
                                 <button
-                                    className={activeFormats.includes("bold") ? "active" : ""}
-                                    onClick={() => handleFormat("bold")}
+                                    className={activeDescriptionFormats.includes("bold") ? "active" : ""}
+                                    onClick={() => handleFormat("bold", descriptionRef, setActiveDescriptionFormats)}
                                 >
                                     <FaBold />
                                 </button>
                                 <button
-                                    className={activeFormats.includes("italic") ? "active" : ""}
-                                    onClick={() => handleFormat("italic")}
+                                    className={activeDescriptionFormats.includes("italic") ? "active" : ""}
+                                    onClick={() => handleFormat("italic", descriptionRef, setActiveDescriptionFormats)}
                                 >
                                     <FaItalic />
                                 </button>
                                 <button
-                                    className={activeFormats.includes("underline") ? "active" : ""}
-                                    onClick={() => handleFormat("underline")}
+                                    className={activeDescriptionFormats.includes("underline") ? "active" : ""}
+                                    onClick={() => handleFormat("underline", descriptionRef, setActiveDescriptionFormats)}
                                 >
                                     <u>U</u>
                                 </button>
                                 <button
-                                    className={activeFormats.includes("strikeThrough") ? "active" : ""}
-                                    onClick={() => handleFormat("strikeThrough")}
+                                    className={activeDescriptionFormats.includes("strikeThrough") ? "active" : ""}
+                                    onClick={() => handleFormat("strikeThrough", descriptionRef, setActiveDescriptionFormats)}
                                 >
                                     <s>abc</s>
                                 </button>
                                 <button
-                                    className={activeFormats.includes("createLink") ? "active" : ""}
-                                    onClick={() => handleFormat("createLink", prompt("Enter URL") || "")}
+                                    className={activeDescriptionFormats.includes("createLink") ? "active" : ""}
+                                    onClick={() => handleFormat("createLink", descriptionRef, setActiveDescriptionFormats, prompt("Enter URL") || "")}
                                 >
                                     <FaLink />
+                                </button>
+                                <button
+                                    className="highlight-red"
+                                    onClick={() => handleFormat("highlight", descriptionRef, setActiveDescriptionFormats, "#ffcccc")}
+                                    style={{ backgroundColor: "#ffcccc", border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Red Highlight"
+                                >
+                                    Red
+                                </button>
+                                <button
+                                    className="highlight-yellow"
+                                    onClick={() => handleFormat("highlight", descriptionRef, setActiveDescriptionFormats, "#ffff99")}
+                                    style={{ backgroundColor: "#ffff99", border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Yellow Highlight"
+                                >
+                                    Yellow
+                                </button>
+                                <button
+                                    className="highlight-blue"
+                                    onClick={() => handleFormat("highlight", descriptionRef, setActiveDescriptionFormats, "#cce5ff")}
+                                    style={{ backgroundColor: "#cce5ff", border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Blue Highlight"
+                                >
+                                    Blue
+                                </button>
+                                <button
+                                    className="remove-highlight"
+                                    onClick={() => handleFormat("removeHighlight", descriptionRef, setActiveDescriptionFormats)}
+                                    style={{ border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Remove Highlight"
+                                >
+                                    Remove
                                 </button>
                             </div>
                             <div
@@ -1054,34 +1162,66 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                         <div className="modal-row-content">
                             <div className="notes-toolbar">
                                 <button
-                                    className={activeFormats.includes("bold") ? "active" : ""}
-                                    onClick={() => handleFormat("bold")}
+                                    className={activeNotesFormats.includes("bold") ? "active" : ""}
+                                    onClick={() => handleFormat("bold", notesRef, setActiveNotesFormats)}
                                 >
                                     <FaBold />
                                 </button>
                                 <button
-                                    className={activeFormats.includes("italic") ? "active" : ""}
-                                    onClick={() => handleFormat("italic")}
+                                    className={activeNotesFormats.includes("italic") ? "active" : ""}
+                                    onClick={() => handleFormat("italic", notesRef, setActiveNotesFormats)}
                                 >
                                     <FaItalic />
                                 </button>
                                 <button
-                                    className={activeFormats.includes("underline") ? "active" : ""}
-                                    onClick={() => handleFormat("underline")}
+                                    className={activeNotesFormats.includes("underline") ? "active" : ""}
+                                    onClick={() => handleFormat("underline", notesRef, setActiveNotesFormats)}
                                 >
                                     <u>U</u>
                                 </button>
                                 <button
-                                    className={activeFormats.includes("strikeThrough") ? "active" : ""}
-                                    onClick={() => handleFormat("strikeThrough")}
+                                    className={activeNotesFormats.includes("strikeThrough") ? "active" : ""}
+                                    onClick={() => handleFormat("strikeThrough", notesRef, setActiveNotesFormats)}
                                 >
                                     <s>abc</s>
                                 </button>
                                 <button
-                                    className={activeFormats.includes("createLink") ? "active" : ""}
-                                    onClick={() => handleFormat("createLink", prompt("Enter URL") || "")}
+                                    className={activeNotesFormats.includes("createLink") ? "active" : ""}
+                                    onClick={() => handleFormat("createLink", notesRef, setActiveNotesFormats, prompt("Enter URL") || "")}
                                 >
                                     <FaLink />
+                                </button>
+                                <button
+                                    className="highlight-red"
+                                    onClick={() => handleFormat("highlight", notesRef, setActiveNotesFormats, "#ffcccc")}
+                                    style={{ backgroundColor: "#ffcccc", border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Red Highlight"
+                                >
+                                    Red
+                                </button>
+                                <button
+                                    className="highlight-yellow"
+                                    onClick={() => handleFormat("highlight", notesRef, setActiveNotesFormats, "#ffff99")}
+                                    style={{ backgroundColor: "#ffff99", border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Yellow Highlight"
+                                >
+                                    Yellow
+                                </button>
+                                <button
+                                    className="highlight-blue"
+                                    onClick={() => handleFormat("highlight", notesRef, setActiveNotesFormats, "#cce5ff")}
+                                    style={{ backgroundColor: "#cce5ff", border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Blue Highlight"
+                                >
+                                    Blue
+                                </button>
+                                <button
+                                    className="remove-highlight"
+                                    onClick={() => handleFormat("removeHighlight", notesRef, setActiveNotesFormats)}
+                                    style={{ border: "1px solid #ccc", margin: "0 2px" }}
+                                    title="Remove Highlight"
+                                >
+                                    Remove
                                 </button>
                             </div>
                             <div
