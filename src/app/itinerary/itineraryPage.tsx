@@ -104,6 +104,7 @@ export default function ItineraryPage({ id }: { id: string }) {
                     retailPrice: activity.retailPrice,
                     netPrice: activity.netPrice,
                     notes: activity.notes,
+                    pdfName: activity.pdfName,
                     imageNames: activity.imageNames,
                     imageUrls: activity.imageUrls,
                     priority: activity.priority,

@@ -80,6 +80,7 @@ export interface Activity {
   retailPrice: number;
   netPrice: number;
   priority: number;
+  pdfName?: string;
   imageNames?: string[];
   imageUrls?: string[];
   supplierId?: number;
