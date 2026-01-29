@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, act } from "react";
-import type { Activity, Item, Supplier } from "./types/types";
+import type { Activity, Item } from "./types/types";
 import { FaTimes, FaBold, FaItalic, FaLink } from "react-icons/fa";
 import "./../styles/itemModal.css";
-import { FiCamera } from "react-icons/fi";
+import { FiCamera, FiPaperclip } from "react-icons/fi";
 
 interface ItemModalProps {
     isOpen: boolean; // Prop to control modal visibility
@@ -38,6 +38,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     const [retailPrice, setRetailPrice] = useState(item?.retailPrice || activity?.retailPrice || 0);
     const [netPrice, setNetPrice] = useState(item?.netPrice || activity?.netPrice || 0);
     const [notes, setNotes] = useState(item?.notes || activity?.notes || "");
+    const [pdfAttachment, setPdfAttachment] = useState<File | string | null>(null);
+    const [pdfName, setPdfName] = useState<string>(activity?.pdfName || "");
     const [images, setImages] = useState<string[]>([]);
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [imageNames, setImageNames] = useState<string[]>(item?.imageNames || activity?.imageNames || []);
@@ -224,9 +226,11 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             }
             retailPriceRef.current!.innerHTML = String(item ? item.retailPrice ?? "0" : activity?.retailPrice ?? "0");
             netPriceRef.current!.innerHTML = String(item ? item.netPrice ?? "0" : activity?.netPrice ?? "0");
+            if (activity?.pdfName)
+                loadPdfFromGCS();
             if (item?.imageNames || activity?.imageNames)
                 loadImagesFromGCS();
-
+            notesRef.current!.innerHTML = item ? item.notes ?? "" : activity?.notes ?? "";
         }
         document.addEventListener("selectionchange", handleSelectionChange);
         return () => {
@@ -450,6 +454,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 retailPrice,
                 netPrice,
                 notes,
+                pdfName,
                 imageNames
             } as Activity;
         } else {
@@ -504,8 +509,32 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 })
                 .catch(error => { console.warn(objectToSave), console.warn("Error saving changes to item ", error) })
 
+        // Upload PDF attachment to backend (only if it's a new File, not an existing URL)
+        if (pdfAttachment && pdfAttachment instanceof File) {
+            console.log("Uploading new PDF file:", pdfAttachment);
+            const formData = new FormData();
+            formData.append("file", pdfAttachment);
+
+            try {
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/date-items/upload-pdf`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                        },
+                        body: formData,
+                    }
+                );
+                if (!response.ok) throw new Error("Could not save PDF");
+            } catch (error) {
+                console.error("Error uploading PDF:", error);
+            }
+        }
+
         // Upload new images to backend (send all files at once)
         if (imageFiles.length > 0) {
+            console.log("uploading Images");
             const formData = new FormData();
 
             // Append all files with the same key name for array handling
@@ -515,7 +544,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
 
             try {
                 const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/items/${objectToSave.id}/upload-image`,
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/images/upload-images`,
                     {
                         method: "POST",
                         headers: {
@@ -534,6 +563,16 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             closeModalItem(objectToSave as Item);
         else if (closeModalActivity)
             closeModalActivity(objectToSave as Activity);
+    }
+
+    const handlePdfUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && file.type === "application/pdf") {
+            setPdfAttachment(file);
+            setPdfName(file.name);
+        } else if (file) {
+            alert("Please select a valid PDF file.");
+        }
     }
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -562,6 +601,28 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 reader.readAsDataURL(file);
             });
         }
+    }
+
+    const loadPdfFromGCS = async () => {
+        console.log("Loading PDF from GCS");
+        const pdfNameToLoad = activity ? activity.pdfName : "";
+        if (!pdfNameToLoad) return;
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/date-items/signed-url/${pdfNameToLoad}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+        })
+            .then(res => {
+                if (!res.ok)
+                    throw new Error(`Request error: ${res.status}`);
+                return res.text();
+            })
+            .then(signedUrl => {
+                setPdfAttachment(signedUrl);
+            })
+            .catch(error => { console.warn(), console.warn("Error retrieving the pdf. ", error) })
     }
 
     const loadImagesFromGCS = async () => {
@@ -1040,6 +1101,60 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                             </div>
                         </div>
                     </div>
+                    {/* PDF Attachment Row */}
+                    {activity && (
+                        <div className="modal-row">
+                            <span className="modal-row-label">PDF Attachment</span>
+                            <div
+                                className="modal-row-content"
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-start",
+                                    gap: "1rem"
+                                }}
+                            >
+                                {/* Upload PDF Button */}
+                                <button
+                                    onClick={() => document.getElementById("pdf-input")?.click()}
+                                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 flex items-center gap-2"
+                                >
+                                    <FiPaperclip className="text-lg" /> {pdfAttachment || pdfName ? "Change PDF" : "Upload PDF"}
+                                </button>
+
+                                {/* Hidden File Input */}
+                                <input
+                                    id="pdf-input"
+                                    type="file"
+                                    accept="application/pdf"
+                                    className="hidden"
+                                    onChange={handlePdfUpload}
+                                />
+
+                                {/* Display current PDF if exists */}
+                                {(pdfAttachment || pdfName) && (
+                                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
+                                        📄
+                                        {/* Make filename clickable if we have a URL */}
+                                        {pdfAttachment && typeof pdfAttachment === 'string' ? (
+                                            <a
+                                                href={pdfAttachment}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-500 hover:text-blue-700 text-sm underline"
+                                            >
+                                                {pdfName || "PDF File"}
+                                            </a>
+                                        ) : (
+                                            <span className="text-sm text-gray-700">
+                                                {pdfName || (pdfAttachment instanceof File ? pdfAttachment.name : "PDF Attached")}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     {/* Image Row */}
                     <div className="modal-row">
                         <span className="modal-row-label">Image</span>
