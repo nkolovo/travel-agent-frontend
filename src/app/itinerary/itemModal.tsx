@@ -328,7 +328,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         const newSupplierEmail = newSupplierEmailInput ? newSupplierEmailInput.trim() : "";
         const newSupplierUrl = newSupplierUrlInput ? newSupplierUrlInput.trim() : "";
 
-        if (newSupplierName) {
+        if (newSupplierCompany) {
             const supplierData = {
                 company: newSupplierCompany,
                 name: newSupplierName,
@@ -363,7 +363,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 })
                 .catch(error => { console.warn("Error saving new supplier. ", error) })
         } else {
-            window.alert("Please enter at least the supplier name.");
+            window.alert("Please enter at least the supplier company.");
         }
     }
 
@@ -547,7 +547,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         }
 
         // Upload new images to backend (send all files at once)
-        if (imageFiles.length > 0) {;
+        if (imageFiles.length > 0) {
             const formData = new FormData();
 
             // Append all files with the same key name for array handling
