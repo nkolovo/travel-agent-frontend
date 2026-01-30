@@ -128,9 +128,9 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
                         ${selectedDate === date ? 'bg-blue-200' : 'hover:bg-gray-200'}`}
           >
             <div className="flex items-center justify-between w-full space-x-1">
-              <div className="flex-1 relative">
+              <div className="flex-1">
                 <div
-                  className="text-md rounded-lg cursor-pointer hover:bg-gray-50 focus-within:ring-1 focus-within:ring-blue-500 flex items-center space-x-2"
+                  className="text-md rounded-lg cursor-pointer hover:bg-gray-50 focus-within:ring-1 focus-within:ring-blue-500 inline-flex items-center space-x-2 relative"
                   onClick={(e) => {
                     e.stopPropagation();
                     const input = e.currentTarget.querySelector('input') as HTMLInputElement;
@@ -169,9 +169,9 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
             </div>
 
             <div className="mt-3">
-              <div className="flex items-center space-x-1 flex-grow min-w-0 relative">
+              <div className="flex items-center space-x-1">
                 <div 
-                  className="flex items-center space-x-1 p-1 rounded-lg cursor-pointer hover:bg-gray-50 focus-within:ring-1 focus-within:ring-blue-500 flex-grow min-w-0"
+                  className="inline-flex items-center space-x-1 p-1 rounded-lg cursor-pointer hover:bg-gray-50 focus-within:ring-1 focus-within:ring-blue-500 relative"
                   onClick={(e) => {
                     const input = e.currentTarget.querySelector('input') as HTMLInputElement;
                     input.focus();
@@ -179,16 +179,13 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
                   }}
                 >
                   <FiEdit className="text-gray-500 text-xs flex-shrink-0" />
+                  <span className="font-semibold text-sm">{date.name}</span>
                   <input
                     id={`date-input-${index}`}
                     type="text"
                     value={date.name}
                     onChange={(e) => handleNameChange(index, e.target.value)}
-                    className="pl-5 absolute inset-0 focus:opacity-100 w-full h-full cursor-pointer bg-transparent border-none font-semibold text-sm p-1 focus:outline-none"
-                    style={{
-                      wordWrap: 'break-word',
-                      whiteSpace: 'normal',
-                    }}
+                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer bg-transparent border-none"
                   />
                 </div>
               </div>
