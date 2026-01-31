@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, act } from "react";
 import type { Activity, Item } from "./types/types";
 import { FaTimes, FaBold, FaItalic, FaLink } from "react-icons/fa";
 import "./../styles/itemModal.css";
-import { FiCamera, FiPaperclip } from "react-icons/fi";
+import { FiCamera, FiPaperclip, FiX } from "react-icons/fi";
 
 interface ItemModalProps {
     isOpen: boolean; // Prop to control modal visibility
@@ -615,6 +615,17 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 reader.readAsDataURL(file);
             });
         }
+    }
+
+    const handleRemoveImage = (indexToRemove: number) => {
+        setImages(prev => prev.filter((_, index) => index !== indexToRemove));
+        setImageNames(prev => {
+            const imageNameToRemove = prev[indexToRemove];
+            if (imageNameToRemove) {
+                setImageFiles(existingFiles => existingFiles.filter(file => file.name !== imageNameToRemove));
+            }
+            return prev.filter((_, index) => index !== indexToRemove);
+        });
     }
 
     const loadPdfFromGCS = async () => {
@@ -1326,12 +1337,40 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                             {images.length > 0 && (
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
                                     {images.map((image, index) => (
-                                        <img
+                                        <div
                                             key={index}
-                                            src={image}
-                                            alt={`Item ${index + 1}`}
-                                            style={{ maxWidth: "400px", maxHeight: "400px", borderRadius: "8px" }}
-                                        />
+                                            style={{ position: "relative", display: "inline-block" }}
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveImage(index)}
+                                                aria-label={`Remove image ${index + 1}`}
+                                                title="Remove image"
+                                                style={{
+                                                    position: "absolute",
+                                                    top: "6px",
+                                                    right: "6px",
+                                                    width: "28px",
+                                                    height: "28px",
+                                                    borderRadius: "9999px",
+                                                    background: "rgba(0, 0, 0, 0.6)",
+                                                    color: "#fff",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    border: "none",
+                                                    cursor: "pointer",
+                                                    zIndex: 1
+                                                }}
+                                            >
+                                                <FiX />
+                                            </button>
+                                            <img
+                                                src={image}
+                                                alt={`Item ${index + 1}`}
+                                                style={{ maxWidth: "400px", maxHeight: "400px", borderRadius: "8px" }}
+                                            />
+                                        </div>
                                     ))}
                                 </div>
                             )}
