@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
-import { Itinerary, User } from "../itinerary/types/types";
+import { Itinerary } from "../itinerary/types/types";
+import ItemModal from "../itinerary/itemModal";
+import SupplierModal from "./supplierModal";
 
 interface DecodedToken {
   sub: string;
@@ -41,6 +43,9 @@ export default function Dashboard() {
     leadName: "",
     numTravelers: 0
   });
+
+  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
 
   const router = useRouter();
 
@@ -149,7 +154,7 @@ export default function Dashboard() {
 
   const handleAddItinerary = async () => {
     if (!newItinerary.leadName.trim() || !newItinerary.numTravelers) {
-      alert("Please enter the Lead Name and Number of Travelers.");
+      window.alert("Please enter the Lead Name and Number of Travelers.");
       return;
     }
 
@@ -208,10 +213,35 @@ export default function Dashboard() {
     router.push(`/itinerary/${itinerary.id}?${queryString}`);
   }
 
+  const openItemModal = () => {
+    setIsItemModalOpen(true);
+  }
+
+  const openSupplierModal = () => {
+    setIsSupplierModalOpen(true);
+  }
+
+  const closeItemModal = () => {
+    setIsItemModalOpen(false);
+  };
+
+  const closeSupplierModal = () => {
+    setIsSupplierModalOpen(false);
+  };
+
   return (
     <div>
       {isAuthenticated ? (
         <div className="container mx-auto p-8">
+          <h1 className="text-center text-3xl sm:text-4xl font-semibold text-gray-900 tracking-tight mb-6">Dashboard</h1>
+          <div className="flex justify-left gap-3 mb-8">
+            <button className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600" onClick={() => openItemModal()}>Add Item</button>
+            <button className="bg-emerald-500 text-white px-4 py-2 rounded shadow hover:bg-emerald-600" onClick={() => openSupplierModal()}>Add/Edit Supplier</button>
+            {/* Render the modal */}
+            {isItemModalOpen && <ItemModal isOpen={isItemModalOpen} closeModalItem={closeItemModal} />}
+            {/* Render the modal */}
+            {isSupplierModalOpen && <SupplierModal isOpen={isSupplierModalOpen} closeModalSupplier={closeSupplierModal} />}
+          </div>
           <div className="flex flex-wrap sm:space-y-4 md:space-y-4 justify-between items-center mb-6 p-4 bg-gray-100 rounded-lg shadow-md overflow-x-auto">
             <div className="flex space-x-4">
               <input type="text" id="agent" name="agent" value={newItinerary.agent} readOnly className="p-2 border rounded bg-gray-200" />
