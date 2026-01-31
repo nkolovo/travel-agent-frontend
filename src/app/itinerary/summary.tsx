@@ -16,7 +16,6 @@ interface DateSummaryProps {
 const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange }) => {
   const [selectedActivity, setSelectedActivity] = useState<Activity | undefined>(); // State for selected activity
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
-
   // Helper function to truncate long descriptions while preserving HTML formatting
   const truncateDescription = (description: string, maxLength: number = 200): string => {
     const tempDiv = document.createElement("div");
@@ -30,14 +29,14 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
     // Truncate while preserving HTML structure
     let truncatedHTML = '';
     let textLength = 0;
-    
+
     const traverse = (node: Node): boolean => {
       if (textLength >= maxLength) return false;
-      
+
       if (node.nodeType === Node.TEXT_NODE) {
         const text = node.textContent || '';
         const remainingLength = maxLength - textLength;
-        
+
         if (text.length <= remainingLength) {
           truncatedHTML += text;
           textLength += text.length;
@@ -49,29 +48,29 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
       } else if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as Element;
         truncatedHTML += `<${element.tagName.toLowerCase()}`;
-        
+
         // Add attributes
         for (let i = 0; i < element.attributes.length; i++) {
           const attr = element.attributes[i];
           truncatedHTML += ` ${attr.name}="${attr.value}"`;
         }
         truncatedHTML += '>';
-        
+
         // Process children
         for (let i = 0; i < node.childNodes.length; i++) {
           if (!traverse(node.childNodes[i])) break;
         }
-        
+
         truncatedHTML += `</${element.tagName.toLowerCase()}>`;
       }
-      
+
       return true;
     };
-    
+
     for (let i = 0; i < tempDiv.childNodes.length; i++) {
       if (!traverse(tempDiv.childNodes[i])) break;
     }
-    
+
     return truncatedHTML + "...";
   };
 
@@ -82,7 +81,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
 
   const onRemoveItemFromDate = async (activity: Activity) => {
     // Remove the item from the list
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/remove/${date!.id}/item/${activity.item.id}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/remove/activity/${activity.id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -99,7 +98,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
           throw new Error(`Error deleting item: ${res}`);
         }
         // Remove the item from the local state
-        const updated = activities.filter(a => a.item.id !== activity.item.id);
+        const updated = activities.filter(a => a.id !== activity.id);
         onChange(updated); // Notify parent component of changes
       })
       .catch(error => { console.warn(activity); console.warn("Error deleting item.", error) })
@@ -108,7 +107,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
   const closeModal = (activity?: Activity) => {
     setIsModalOpen(false); // Close the modal
     if (activity) {
-      const index = activities.findIndex(a => a.item.id === activity.item.id);
+      const index = activities.findIndex(a => a.id === activity.id);
       if (index !== -1) {
         const updated = [...activities];
         updated[index] = activity; // Replace existing activity
@@ -176,7 +175,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
               >
                 {activities.length > 0 ? (
                   activities.map((activity, index) => (
-                    <Draggable key={activity.item.id} draggableId={activity.item!.id!.toString()} index={index}>
+                    <Draggable key={activity.id} draggableId={activity.id!.toString()} index={index}>
                       {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
