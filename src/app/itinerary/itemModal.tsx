@@ -43,7 +43,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     const [images, setImages] = useState<string[]>([]);
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [imageNames, setImageNames] = useState<string[]>(item?.imageNames || activity?.imageNames || []);
-    const [activeFormats, setActiveFormats] = useState<string[]>([]);
     const [activeTitleFormats, setActiveTitleFormats] = useState<string[]>([]);
     const [activeDescriptionFormats, setActiveDescriptionFormats] = useState<string[]>([]);
     const [activeNotesFormats, setActiveNotesFormats] = useState<string[]>([]);
@@ -362,6 +361,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                     supplierUrlRef.current!.innerHTML = newSupplierUrl;
                 })
                 .catch(error => { console.warn("Error saving new supplier. ", error) })
+            window.alert("Supplier saved successfully.");
         } else {
             window.alert("Please enter at least the supplier company.");
         }
@@ -573,10 +573,14 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             }
         }
 
-        if (closeModalItem)
+        if (closeModalItem) {
             closeModalItem(objectToSave as Item);
-        else if (closeModalActivity)
+            window.alert("Item saved successfully.");
+        }
+        else if (closeModalActivity) {
             closeModalActivity(objectToSave as Activity);
+            window.alert("Activity saved successfully.");
+        }
     }
 
     const handlePdfUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -585,7 +589,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             setPdfAttachment(file);
             setPdfName(file.name);
         } else if (file) {
-            alert("Please select a valid PDF file.");
+            window.alert("Please select a valid PDF file.");
         }
     }
 
