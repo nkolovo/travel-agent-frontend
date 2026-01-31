@@ -89,6 +89,7 @@ export default function ItineraryPage({ id }: { id: string }) {
             })
             .then(activities => {
                 setActivities(activities.map((activity: Activity) => ({
+                    id: activity.id,
                     date: date,
                     item: activity.item,
                     country: activity.country,
@@ -153,66 +154,45 @@ export default function ItineraryPage({ id }: { id: string }) {
         handlePriceChange(-totalRetailPrice, -totalNetPrice);
     }
 
-    const handleSelectItem = (item: Item) => {
+    const handleSelectItem = async (item: Item) => {
         if (!selectedDate) {
             window.confirm("You have not selected a date for this activity. Please add or select an existing date.");
             return;
         }
 
-        // if the item already exists in the activities for the selected date, do not add it again
-        if (activities.some(activity => activity.item.id === item.id && activity.date.id === selectedDate.id)) {
-            window.alert("This item is already added to the selected date.");
-            return;
-        }
-
-        const newActivity: Activity = {
-            date: selectedDate,
-            item: item,
-            country: item.country,
-            location: item.location,
-            category: item.category,
-            name: item.name,
-            description: item.description,
-            supplierCompany: item.supplierCompany,
-            supplierName: item.supplierName,
-            supplierNumber: item.supplierNumber,
-            supplierEmail: item.supplierEmail,
-            supplierUrl: item.supplierUrl,
-            retailPrice: item.retailPrice,
-            netPrice: item.netPrice,
-            notes: item.notes,
-            imageNames: item.imageNames,
-            priority: activities.length > 0
+        try {
+            item.priority = activities.length > 0
                 ? Math.max(...activities.map(a => a.priority ?? 0)) + 1
-                : 1,
-        };
+                : 1
+            const newActivity: Activity = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/add/${selectedDate!.id}/item/${item.id}/priority/${item.priority}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            })
+                .then(res => {
+                    if (!res.ok)
+                        throw new Error(`Request error: ${res.status}`);
+                    return res.json();
+                })
+                .then(res => {
+                    return res as Activity;
+                });
 
-        if (item.retailPrice > 0 || item.netPrice > 0) {
-            handlePriceChange(item.retailPrice, item.netPrice);
+
+            if (newActivity.retailPrice > 0 || newActivity.netPrice > 0) {
+                handlePriceChange(newActivity.retailPrice, newActivity.netPrice);
+            }
+
+            setActivities([...activities, newActivity]);
+        } catch (error) {
+            console.error("Error saving item to date:", error);
         }
-
-        item.priority = newActivity.priority;
-        saveItemToDate(item);
-        setActivities([...activities, newActivity]);
     };
 
-    const saveItemToDate = (item: Item) => {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/add/${selectedDate!.id}/item/${item.id}/priority/${item.priority}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${localStorage.getItem("token")}`,
-            },
-        })
-            .then(res => {
-                if (!res.ok)
-                    throw new Error(`Request error: ${res.status}`);
-            })
-            .catch(error => console.error("Error saving item to date:", error))
-    }
-
     const saveActivityToDate = (activity: Activity) => {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/saveDateItem/${activity.date.id}/item/${activity.item.id}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/saveDateItem`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -228,16 +208,16 @@ export default function ItineraryPage({ id }: { id: string }) {
     }
 
     const handleActivityUpdate = (acts: Activity[]) => {
-        const origMap = new Map(activities.map(a => [a.item.id, a]));
-        const newMap = new Map(acts.map(a => [a.item.id, a]));
+        const origMap = new Map(activities.map(a => [a.id, a]));
+        const newMap = new Map(acts.map(a => [a.id, a]));
 
         // removed = in orig but not in new
-        const removed = [...origMap.values()].filter(o => !newMap.has(o.item.id));
+        const removed = [...origMap.values()].filter(o => !newMap.has(o.id));
         // added = in new but not in orig
-        const added = [...newMap.values()].filter(n => !origMap.has(n.item.id));
+        const added = [...newMap.values()].filter(n => !origMap.has(n.id));
         // changed = in both but different
         const changed = [...newMap.values()].filter(n => {
-            const o = origMap.get(n.item.id);
+            const o = origMap.get(n.id);
             return o && JSON.stringify(o) !== JSON.stringify(n);
         });
 
@@ -257,11 +237,11 @@ export default function ItineraryPage({ id }: { id: string }) {
 
         // handle changes: apply per-item delta and persist
         for (const updated of changed) {
-            const original = origMap.get(updated.item.id)!;
-            const deltaRetail = (updated.retailPrice ?? 0) - (original.retailPrice ?? 0);
-            const deltaNet = (updated.netPrice ?? 0) - (original.netPrice ?? 0);
-            if (deltaRetail !== 0 || deltaNet !== 0) handlePriceChange(deltaRetail, deltaNet);
-            saveActivityToDate(updated);
+            const original = origMap.get(updated.id)!;
+
+            // Only save if priority changed (rearrangement) or if it's a new activity
+            if (updated.priority !== original.priority)
+                saveActivityToDate(updated);
         }
 
         setActivities(acts);
