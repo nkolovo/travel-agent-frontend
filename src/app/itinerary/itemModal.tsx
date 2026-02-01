@@ -46,6 +46,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     const [activeTitleFormats, setActiveTitleFormats] = useState<string[]>([]);
     const [activeDescriptionFormats, setActiveDescriptionFormats] = useState<string[]>([]);
     const [activeNotesFormats, setActiveNotesFormats] = useState<string[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
     const titleRef = useRef<HTMLDivElement>(null);
     const descriptionRef = useRef<HTMLDivElement>(null);
     const supplierNameRef = useRef<HTMLDivElement>(null);
@@ -361,7 +362,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                     supplierUrlRef.current!.innerHTML = newSupplierUrl;
                 })
                 .catch(error => { console.warn("Error saving new supplier. ", error) })
-            window.alert("Supplier saved successfully.");
         } else {
             window.alert("Please enter at least the supplier company.");
         }
@@ -429,10 +429,12 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
     }
 
     const saveItem = async () => {
-        if (!location || !category || !title || !description) {
-            window.alert("Please fill in all fields before saving.");
+        if (isSaving) return;
+        if (!country || !location || !category || !title || !description) {
+            window.alert("Please fill in at least country, location, category, title, and description before saving.");
             return;
         }
+        setIsSaving(true);
 
         let objectToSave: Item | Activity;
         let isActivity = false;
@@ -575,12 +577,11 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
 
         if (closeModalItem) {
             closeModalItem(objectToSave as Item);
-            window.alert("Item saved successfully.");
         }
         else if (closeModalActivity) {
             closeModalActivity(objectToSave as Activity);
-            window.alert("Activity saved successfully.");
         }
+        setIsSaving(false);
     }
 
     const handlePdfUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1383,7 +1384,14 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                 </div>
 
                 <div className="modal-footer">
-                    <button className="modal-button-save" onClick={saveItem}>Save</button>
+                    <button
+                        className="modal-button-save"
+                        onClick={saveItem}
+                        disabled={isSaving}
+                        style={{ opacity: isSaving ? 0.5 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}
+                    >
+                        {isSaving ? 'Saving...' : 'Save'}
+                    </button>
                     <button className="modal-button-close" onClick={() => (closeModalItem && closeModalItem()) || (closeModalActivity && closeModalActivity())}>Close</button>
                 </div>
             </div>

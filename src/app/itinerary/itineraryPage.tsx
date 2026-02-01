@@ -239,8 +239,15 @@ export default function ItineraryPage({ id }: { id: string }) {
         for (const updated of changed) {
             const original = origMap.get(updated.id)!;
 
-            // Only save if priority changed (rearrangement) or if it's a new activity
-            if (updated.priority !== original.priority)
+            // Calculate price deltas for changed activities
+            const retailDelta = (updated.retailPrice ?? 0) - (original.retailPrice ?? 0);
+            const netDelta = (updated.netPrice ?? 0) - (original.netPrice ?? 0);
+            if (retailDelta !== 0 || netDelta !== 0) {
+                handlePriceChange(retailDelta, netDelta);
+            }
+
+            // Save if priority changed (rearrangement) or any other field changed
+            if (updated.priority !== original.priority || retailDelta !== 0 || netDelta !== 0)
                 saveActivityToDate(updated);
         }
 

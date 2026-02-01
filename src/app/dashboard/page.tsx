@@ -46,6 +46,8 @@ export default function Dashboard() {
 
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const router = useRouter();
 
@@ -223,10 +225,16 @@ export default function Dashboard() {
 
   const closeItemModal = () => {
     setIsItemModalOpen(false);
+    setSuccessMessage("Item saved successfully");
+    setShowSuccessToast(true);
+    setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
   const closeSupplierModal = () => {
     setIsSupplierModalOpen(false);
+    setSuccessMessage("Supplier saved successfully");
+    setShowSuccessToast(true);
+    setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
   return (
@@ -324,6 +332,11 @@ export default function Dashboard() {
         </div>
       ) : (
         <p>Redirecting...</p>
+      )}
+      {showSuccessToast && (
+        <div className="toast-notification">
+          <span>✓ {successMessage}</span>
+        </div>
       )}
     </div>
   );

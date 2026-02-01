@@ -15,6 +15,8 @@ const SupplierModal: React.FC<ItemModalProps> = ({ isOpen, closeModalSupplier })
     const [supplierCompanies, setSupplierCompanies] = useState<string[]>([]);
     const [supplierCompany, setSupplierCompany] = useState<string | null>(null);
     const [isManualSupplierEntry, setIsManualSupplierEntry] = useState(false);
+    const [showSuccessToast, setShowSuccessToast] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const supplierCompanyRef = useRef<HTMLDivElement>(null);
     const supplierNameRef = useRef<HTMLDivElement>(null);
     const supplierNumberRef = useRef<HTMLDivElement>(null);
@@ -29,6 +31,8 @@ const SupplierModal: React.FC<ItemModalProps> = ({ isOpen, closeModalSupplier })
     }, []);
 
     const addSupplier = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
         const company = supplierInput.trim();
         if (company) {
             const supplierData = {
@@ -57,12 +61,17 @@ const SupplierModal: React.FC<ItemModalProps> = ({ isOpen, closeModalSupplier })
                     setSupplierInput(company);
                     setSupplierCompany(company);
                 })
-                .catch(error => { console.warn("Error saving new supplier. ", error) })
+                .catch(error => { 
+                    console.warn("Error saving new supplier. ", error);
+                    setIsSaving(false);
+                })
             if (closeModalSupplier) {
+                setShowSuccessToast(true);
+                setTimeout(() => setShowSuccessToast(false), 3000);
                 closeModalSupplier();
-                window.alert("Supplier saved successfully.");
             }
         } else {
+            setIsSaving(false);
             window.alert("Please enter at least the supplier company.");
         }
     }
@@ -294,10 +303,22 @@ const SupplierModal: React.FC<ItemModalProps> = ({ isOpen, closeModalSupplier })
                 </div>
 
                 <div className="modal-footer">
-                    <button className="modal-button-save" onClick={addSupplier}>Save</button>
+                    <button 
+                        className="modal-button-save" 
+                        onClick={addSupplier}
+                        disabled={isSaving}
+                        style={{ opacity: isSaving ? 0.5 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}
+                    >
+                        {isSaving ? 'Saving...' : 'Save'}
+                    </button>
                     <button className="modal-button-close" onClick={() => (closeModalSupplier && closeModalSupplier())}>Close</button>
                 </div>
             </div>
+            {showSuccessToast && (
+                <div className="toast-notification">
+                    <span>✓ Supplier saved successfully</span>
+                </div>
+            )}
         </div>
     );
 };
