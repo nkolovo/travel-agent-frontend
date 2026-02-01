@@ -16,6 +16,8 @@ interface DateSummaryProps {
 const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange }) => {
   const [selectedActivity, setSelectedActivity] = useState<Activity | undefined>(); // State for selected activity
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   // Helper function to truncate long descriptions while preserving HTML formatting
   const truncateDescription = (description: string, maxLength: number = 200): string => {
     const tempDiv = document.createElement("div");
@@ -113,6 +115,9 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
         updated[index] = activity; // Replace existing activity
         onChange(updated); // Notify parent component of changes
       }
+      setSuccessMessage("Activity saved successfully");
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
     }
   };
 
@@ -229,6 +234,11 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
           </Droppable>
         </DragDropContext>
       </div>
+      {showSuccessToast && (
+        <div className="toast-notification">
+          <span>✓ {successMessage}</span>
+        </div>
+      )}
     </div>
   );
 };

@@ -31,6 +31,8 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
 
   const [selectedItem, setSelectedItem] = useState<Item | undefined>(); // State for selected item
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Helper function to truncate long descriptions while preserving HTML formatting
   const truncateDescription = (description: string, maxLength: number = 100): string => {
@@ -148,6 +150,9 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
         items.push(item); // Add new item
       }
       onChange(items); // Notify parent component of changes
+      setSuccessMessage("Item saved successfully");
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
     }
   };
 
@@ -309,6 +314,11 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
           )}
         </ul>
       </div>
+      {showSuccessToast && (
+        <div className="toast-notification">
+          <span>✓ {successMessage}</span>
+        </div>
+      )}
     </div>
   );
 };
