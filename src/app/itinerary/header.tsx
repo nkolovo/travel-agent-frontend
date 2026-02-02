@@ -2,14 +2,17 @@
 
 import { useEffect, useState, useRef } from "react";
 import { FiEdit, FiCamera } from "react-icons/fi";
+import NotesModal from "./notesModal";
 
 interface HeaderProps {
   itineraryId: number;
   retailPrice: number;
   netPrice: number;
+  notes: string | undefined;
+  onNotesUpdate?: (notes: string) => void;
 }
 
-export default function Header({ itineraryId, retailPrice, netPrice }: HeaderProps) {
+export default function Header({ itineraryId, retailPrice, netPrice, notes, onNotesUpdate }: HeaderProps) {
   const [itineraryLoaded, setItineraryLoaded] = useState<boolean>(false);
   const [coverImage, setCoverImage] = useState<string>("");
 
@@ -19,6 +22,9 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
   const [tripCost, setTripCost] = useState<number>(retailPrice);
   const [netCost, setNetCost] = useState<number>(netPrice);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Refs to track previous values
   const isFirstRender = useRef(true);
@@ -150,8 +156,24 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
     }
   };
 
+  const openModal = () => {
+    setIsModalOpen(true);
+  }
+
+  const closeModal = (updatedNotes?: string) => {
+    setIsModalOpen(false);
+    if (updatedNotes && onNotesUpdate) {
+      onNotesUpdate(updatedNotes);
+      setSuccessMessage("Notes saved successfully");
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 5000);
+    }
+  }
+
   return (
     <div className="relative w-full h-32 bg-gray-300 rounded-lg overflow-hidden shadow-md">
+      {/* Render the modal */}
+      {isModalOpen && <NotesModal isOpen={isModalOpen} closeModal={closeModal} notes={notes} itineraryId={itineraryId} />}
       {/* Cover Image */}
       {coverImage ? (
         <img
@@ -200,14 +222,16 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
       </div>
 
       {/* Total Trip Cost (Under Title) */}
-      <p className="absolute top-8 left-4 text-white text-sm drop-shadow-md">
+      <p className="absolute top-9 left-4 text-white text-sm drop-shadow-md">
         Total Cost: €{tripCost}
       </p>
 
       {/* Net Cost (Under Trip Cost) */}
-      <p className="absolute top-12 left-4 text-white text-sm drop-shadow-md">
+      <p className="absolute top-14 left-4 text-white text-sm drop-shadow-md">
         Net Cost: €{netCost}
       </p>
+
+      <button className="absolute top-20 left-4 bg-purple-500 text-white px-4 py-2 rounded shadow hover:bg-purple-600" onClick={() => openModal()}>Notes</button>
 
       {/* Change Cover Photo Button (Bottom Right) */}
       <button
@@ -225,6 +249,11 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
         className="hidden"
         onChange={handleCoverImageChange}
       />
+      {showSuccessToast && (
+        <div className="toast-notification">
+          <span>✓ {successMessage}</span>
+        </div>
+      )}
     </div>
   );
 }

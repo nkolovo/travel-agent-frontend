@@ -152,7 +152,7 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
       onChange(items); // Notify parent component of changes
       setSuccessMessage("Item saved successfully");
       setShowSuccessToast(true);
-      setTimeout(() => setShowSuccessToast(false), 3000);
+      setTimeout(() => setShowSuccessToast(false), 5000);
     }
   };
 
