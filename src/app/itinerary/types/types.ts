@@ -36,8 +36,13 @@ export interface Itinerary {
   status?: string;
   docsSent?: boolean;
   coverImageUrl?: string;
+  notes?: string;
   client: String;
   dates?: Date[] | null;
+}
+
+export interface ItineraryNotes {
+  content?: string;
 }
 
 export interface Date {

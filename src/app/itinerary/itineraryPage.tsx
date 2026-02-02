@@ -13,6 +13,7 @@ export default function ItineraryPage({ id }: { id: string }) {
     const [itineraryId, setItineraryId] = useState<number>();
     const [itineraryTripCost, setItineraryTripCost] = useState<number>(0);
     const [itineraryNetCost, setItineraryNetCost] = useState<number>(0);
+    const [itineraryNotes, setItineraryNotes] = useState<string>();
     const [dates, setDates] = useState<Date[]>([])
     const [selectedDate, setSelectedDate] = useState<Date>();
     const [activities, setActivities] = useState<Activity[]>([]);
@@ -57,6 +58,7 @@ export default function ItineraryPage({ id }: { id: string }) {
                     setItineraryId(itinerary.id);
                     setItineraryTripCost(itinerary.tripPrice);
                     setItineraryNetCost(itinerary.netPrice);
+                    setItineraryNotes(itinerary.notes);
                     itinerary.dates.sort((a: Date, b: Date) => {
                         // Comparing dates (a.date and b.date are strings in ISO format)
                         return new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -263,12 +265,16 @@ export default function ItineraryPage({ id }: { id: string }) {
         setItineraryNetCost(prev => prev + netCost);
     }
 
+    const handleNotesUpdate = (updatedNotes: string) => {
+        setItineraryNotes(updatedNotes);
+    }
+
     return (
         <div className="flex flex-col flex-1 overflow-hidden">
             {itineraryId !== undefined &&
                 <div className="itinerary-section flex-1 overflow-hidden">
                     <div className="w-full">
-                        <Header itineraryId={itineraryId} retailPrice={itineraryTripCost} netPrice={itineraryNetCost} />
+                        <Header itineraryId={itineraryId} retailPrice={itineraryTripCost} netPrice={itineraryNetCost} notes={itineraryNotes} onNotesUpdate={handleNotesUpdate} />
                     </div>
                     <div className="grid grid-cols-12 gap-2 flex-1 overflow-hidden">
                         <div className="h-[calc(100vh-10rem)] flex flex-col flex-1 overflow-hidden col-span-3">

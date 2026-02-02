@@ -117,7 +117,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
       }
       setSuccessMessage("Activity saved successfully");
       setShowSuccessToast(true);
-      setTimeout(() => setShowSuccessToast(false), 3000);
+      setTimeout(() => setShowSuccessToast(false), 5000);
     }
   };
 
