@@ -44,8 +44,6 @@ const SupplierModal: React.FC<ItemModalProps> = ({ isOpen, closeModalSupplier })
                 deleted: false
             };
 
-            console.log(supplierData);
-
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/suppliers/save`, {
                 method: "POST",
                 headers: {
