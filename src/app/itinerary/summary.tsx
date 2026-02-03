@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import type { Date } from './types/types';
+import type { Date, Traveler } from './types/types';
 import { Activity } from './types/types';
-import { FaCalendarAlt, FaPlaneArrival, FaPlaneDeparture, FaShip } from "react-icons/fa";
+import { FaCalendarAlt, FaPlaneArrival, FaPlaneDeparture, FaShip, FaUser } from "react-icons/fa";
 import { FiEdit, FiX } from 'react-icons/fi';
 import ItemModal from './itemModal';
+import TravelerModal from './travelerModal';
 import DOMPurify from "dompurify";
 
 interface DateSummaryProps {
@@ -14,8 +16,14 @@ interface DateSummaryProps {
 }
 
 const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange }) => {
+  const params = useParams();
+  const itineraryId = parseInt(params.id as string);
+
   const [selectedActivity, setSelectedActivity] = useState<Activity | undefined>(); // State for selected activity
-  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false); // State for modal visibility
+  const [isTravelerModalOpen, setIsTravelerModalOpen] = useState(false); // State for traveler modal visibility
+  const [travelers, setTravelers] = useState<Traveler[]>([]); // State for travelers
+
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   // Helper function to truncate long descriptions while preserving HTML formatting
@@ -78,7 +86,7 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
 
   const onCustomizeAcivity = (activity: Activity) => {
     setSelectedActivity(activity); // Set the selected activity for editing
-    setIsModalOpen(true); // Open the modal
+    setIsActivityModalOpen(true); // Open the modal
   }
 
   const onRemoveItemFromDate = async (activity: Activity) => {
@@ -106,8 +114,8 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
       .catch(error => { console.warn(activity); console.warn("Error deleting item.", error) })
   }
 
-  const closeModal = (activity?: Activity) => {
-    setIsModalOpen(false); // Close the modal
+  const closeActivityModal = (activity?: Activity) => {
+    setIsActivityModalOpen(false); // Close the modal
     if (activity) {
       const index = activities.findIndex(a => a.id === activity.id);
       if (index !== -1) {
@@ -118,6 +126,13 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
       setSuccessMessage("Activity saved successfully");
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 5000);
+    }
+  };
+
+  const closeTravelerModal = (travelers?: Traveler[]) => {
+    setIsTravelerModalOpen(false); // Close the modal
+    if (travelers) {
+      setTravelers(travelers);
     }
   };
 
@@ -164,10 +179,23 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
           {date?.name.includes("Ferry") && <FaShip className="text-blue-500" />}
           <span>{date?.name}</span>
         </div>
+
+        {/* Traveler Info Button */}
+        <button
+          onClick={() => setIsTravelerModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition duration-150"
+        >
+          <FaUser />
+          <span>Manage Travelers</span>
+        </button>
+
       </div>
 
+      {/* Traveler Info Modal */}
+      {isTravelerModalOpen && <TravelerModal isOpen={isTravelerModalOpen} closeModal={closeTravelerModal} itineraryId={itineraryId} travelers={travelers} />}
+
       {/* Render the modal */}
-      {isModalOpen && <ItemModal isOpen={isModalOpen} closeModalActivity={closeModal} activity={selectedActivity} />}
+      {isActivityModalOpen && <ItemModal isOpen={isActivityModalOpen} closeModalActivity={closeActivityModal} activity={selectedActivity} />}
 
       <div>
         <DragDropContext onDragEnd={handleDragEnd}>
