@@ -1,14 +1,13 @@
 export interface User {
   id?: number;
   username: string;
-  password?: string; // Typically, this would not be sent to the frontend for security reasons
-  role?: Role; // Role of the user
-  itineraries?: Itinerary[]; // List of itineraries associated with the user
+  role?: Role;
+  itineraries?: Itinerary[];
 }
 
 export interface Role {
   id: number;
-  name: string; // Assuming you have a name or role description in the Role entity
+  name: string;
 }
 
 export interface Client {
@@ -16,7 +15,7 @@ export interface Client {
   name: string;
   email?: string;
   phone?: string;
-  itineraries?: Itinerary[]; // List of itineraries associated with the client
+  itineraries?: Itinerary[];
 }
 
 export interface Itinerary {
@@ -37,12 +36,17 @@ export interface Itinerary {
   docsSent?: boolean;
   coverImageUrl?: string;
   notes?: string;
-  client: String;
+  client: string;
   dates?: Date[] | null;
 }
 
-export interface ItineraryNotes {
-  content?: string;
+export interface Traveler {
+  id?: number;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  passportNumber?: string;
 }
 
 export interface Date {
