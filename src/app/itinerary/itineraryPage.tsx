@@ -274,10 +274,10 @@ export default function ItineraryPage({ id }: { id: string }) {
             {itineraryId !== undefined &&
                 <div className="itinerary-section flex-1 overflow-hidden">
                     <div className="w-full">
-                        <Header itineraryId={itineraryId} retailPrice={itineraryTripCost} netPrice={itineraryNetCost} notes={itineraryNotes} onNotesUpdate={handleNotesUpdate} />
+                        <Header itineraryId={itineraryId} retailPrice={itineraryTripCost} netPrice={itineraryNetCost} />
                     </div>
                     <div className="grid grid-cols-12 gap-2 flex-1 overflow-hidden">
-                        <div className="h-[calc(100vh-10rem)] flex flex-col flex-1 overflow-hidden col-span-3">
+                        <div className="h-[calc(100vh-15rem)] flex flex-col flex-1 overflow-hidden col-span-3">
                             <DateList
                                 itineraryId={itineraryId}
                                 dates={dates}
@@ -288,11 +288,11 @@ export default function ItineraryPage({ id }: { id: string }) {
                             />
                         </div>
 
-                        <div className="h-[calc(100vh-10rem)] flex flex-col flex-1 col-span-6 overflow-y-auto">
-                            <DateSummary date={selectedDate} activities={activities} onChange={handleActivityUpdate} />
+                        <div className="h-[calc(100vh-15rem)] flex flex-col flex-1 col-span-6 overflow-y-auto">
+                            <DateSummary date={selectedDate} activities={activities} onChange={handleActivityUpdate} notes={itineraryNotes} onNotesUpdate={handleNotesUpdate} />
                         </div>
 
-                        <div className="h-[calc(100vh-10rem)] col-span-3 flex flex-col overflow-y-auto">
+                        <div className="h-[calc(100vh-15rem)] col-span-3 flex flex-col overflow-y-auto">
                             <ItemList items={items} onSelectItem={handleSelectItem} onChange={handleItemUpdate} />
                         </div>
                     </div>

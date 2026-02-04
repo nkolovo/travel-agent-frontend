@@ -3,29 +3,34 @@ import { useParams } from 'next/navigation';
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import type { Date, Traveler } from './types/types';
 import { Activity } from './types/types';
-import { FaCalendarAlt, FaPlaneArrival, FaPlaneDeparture, FaShip, FaUser } from "react-icons/fa";
+import { FaCalendarAlt, FaPlaneArrival, FaPlaneDeparture, FaShip, FaUser, FaStickyNote } from "react-icons/fa";
 import { FiEdit, FiX } from 'react-icons/fi';
 import ItemModal from './itemModal';
 import TravelerModal from './travelerModal';
 import DOMPurify from "dompurify";
+import NotesModal from './notesModal';
 
 interface DateSummaryProps {
   date: Date | undefined; // The selected date
   activities: Activity[]; // List of activities on that date
   onChange: (activities: Activity[]) => void; // Callback to handle changes in the activity list
+  notes?: string | undefined;
+  onNotesUpdate?: (notes: string) => void;
 }
 
-const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange }) => {
+const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange, notes, onNotesUpdate }) => {
   const params = useParams();
   const itineraryId = parseInt(params.id as string);
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | undefined>(); // State for selected activity
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false); // State for modal visibility
   const [isTravelerModalOpen, setIsTravelerModalOpen] = useState(false); // State for traveler modal visibility
+  const [isNotesModalOpen, setIsNotesModalOpen] = useState(false); // State for notes modal visibility
   const [travelers, setTravelers] = useState<Traveler[]>([]); // State for travelers
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+
   // Helper function to truncate long descriptions while preserving HTML formatting
   const truncateDescription = (description: string, maxLength: number = 200): string => {
     const tempDiv = document.createElement("div");
@@ -136,6 +141,16 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
     }
   };
 
+  const closeNotesModal = (updatedNotes?: string) => {
+    setIsNotesModalOpen(false);
+    if (updatedNotes && onNotesUpdate) {
+      onNotesUpdate(updatedNotes);
+      setSuccessMessage("Notes saved successfully");
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 5000);
+    }
+  }
+
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     const reordered = Array.from(activities);
@@ -189,10 +204,22 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange })
           <span>Manage Travelers</span>
         </button>
 
+        {/* Notes Button */}
+        <button
+          onClick={() => setIsNotesModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded bg-purple-500 text-white hover:bg-purple-600 transition duration-150"
+        >
+          <FaStickyNote />
+          <span>Notes</span>
+        </button>
+
       </div>
 
       {/* Traveler Info Modal */}
       {isTravelerModalOpen && <TravelerModal isOpen={isTravelerModalOpen} closeModal={closeTravelerModal} itineraryId={itineraryId} travelers={travelers} />}
+
+      {/* Notes Modal */}
+      {isNotesModalOpen && <NotesModal isOpen={isNotesModalOpen} closeModal={closeNotesModal} notes={notes} itineraryId={itineraryId} />}
 
       {/* Render the modal */}
       {isActivityModalOpen && <ItemModal isOpen={isActivityModalOpen} closeModalActivity={closeActivityModal} activity={selectedActivity} />}

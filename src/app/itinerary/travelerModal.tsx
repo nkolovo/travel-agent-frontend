@@ -15,6 +15,7 @@ const TravelerModal: React.FC<TravelerModalProps> = ({ isOpen, closeModal, itine
     const [selectedTravelerId, setSelectedTravelerId] = useState<number | null>(null);
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
+    const [dateOfBirth, setDateOfBirth] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
     const [passportNumber, setPassportNumber] = useState("");
@@ -57,6 +58,7 @@ const TravelerModal: React.FC<TravelerModalProps> = ({ isOpen, closeModal, itine
             setSelectedTravelerId(null);
             setFirstName("");
             setLastName("");
+            setDateOfBirth("");
             setEmail("");
             setPhone("");
             setPassportNumber("");
@@ -68,6 +70,7 @@ const TravelerModal: React.FC<TravelerModalProps> = ({ isOpen, closeModal, itine
                 setSelectedTravelerId(id);
                 setFirstName(traveler.firstName || "");
                 setLastName(traveler.lastName || "");
+                setDateOfBirth(traveler.dateOfBirth || "");
                 setEmail(traveler.email || "");
                 setPhone(traveler.phone || "");
                 setPassportNumber(traveler.passportNumber || "");
@@ -92,13 +95,14 @@ const TravelerModal: React.FC<TravelerModalProps> = ({ isOpen, closeModal, itine
             id: selectedTravelerId || undefined,
             firstName: firstName.trim(),
             lastName: lastName.trim(),
+            dateOfBirth: dateOfBirth.trim() || undefined,
             email: email.trim() || undefined,
             phone: phone.trim() || undefined,
             passportNumber: passportNumber.trim() || undefined,
         };
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/${itineraryId}/traveler`, {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/${itineraryId}/traveler`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -112,7 +116,7 @@ const TravelerModal: React.FC<TravelerModalProps> = ({ isOpen, closeModal, itine
                     const id = await res.json();
                     travelerData.id = id;
                 })
-                .catch(error => { console.warn("Error saving changes to traveler.", error) })
+                .catch(error => { window.alert(error) })
 
             // Update the travelers list locally
             setTravelers(prev => {
@@ -132,12 +136,12 @@ const TravelerModal: React.FC<TravelerModalProps> = ({ isOpen, closeModal, itine
             setSelectedTravelerId(null);
             setFirstName("");
             setLastName("");
+            setDateOfBirth("");
             setEmail("");
             setPhone("");
             setPassportNumber("");
 
         } catch (error) {
-            console.warn("Error saving traveler:", error);
             window.alert("Failed to save traveler. Please try again.");
         } finally {
             setSuccessMessage("Traveler saved successfully");
@@ -172,6 +176,7 @@ const TravelerModal: React.FC<TravelerModalProps> = ({ isOpen, closeModal, itine
                 setSelectedTravelerId(null);
                 setFirstName("");
                 setLastName("");
+                setDateOfBirth("");
                 setEmail("");
                 setPhone("");
                 setPassportNumber("");
@@ -221,9 +226,24 @@ const TravelerModal: React.FC<TravelerModalProps> = ({ isOpen, closeModal, itine
                         </div>
                     </div>
 
+                    {/* Last Name Row */}
+                    <div className="modal-row">
+                        <span className="modal-row-label">Last Name *</span>
+                        <div className="modal-row-content" style={{ flex: 1 }}>
+                            <input
+                                type="text"
+                                className="modal-input"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                                placeholder="Enter last name"
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+                    </div>
+
                     {/* First Name Row */}
                     <div className="modal-row">
-                        <span className="modal-row-label">First Name *</span>
+                        <span className="modal-row-label">First Name, Middle Name*</span>
                         <div className="modal-row-content" style={{ flex: 1 }}>
                             <input
                                 type="text"
@@ -236,16 +256,16 @@ const TravelerModal: React.FC<TravelerModalProps> = ({ isOpen, closeModal, itine
                         </div>
                     </div>
 
-                    {/* Last Name Row */}
+                    {/* Date of Birth Row */}
                     <div className="modal-row">
-                        <span className="modal-row-label">Last Name *</span>
+                        <span className="modal-row-label">Date of Birth</span>
                         <div className="modal-row-content" style={{ flex: 1 }}>
                             <input
-                                type="text"
+                                type="date"
                                 className="modal-input"
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                                placeholder="Enter last name"
+                                value={dateOfBirth}
+                                onChange={(e) => setDateOfBirth(e.target.value)}
+                                placeholder="Enter date of birth"
                                 style={{ width: '100%' }}
                             />
                         </div>
@@ -334,14 +354,31 @@ const TravelerModal: React.FC<TravelerModalProps> = ({ isOpen, closeModal, itine
                                         }}
                                     >
                                         <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: '600' }}>
-                                                {traveler.firstName} {traveler.lastName}
+                                            <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                                                {traveler.lastName} / {traveler.firstName}
                                             </div>
-                                            {(traveler.email || traveler.phone) && (
-                                                <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-                                                    {traveler.email && <span>{traveler.email}</span>}
-                                                    {traveler.email && traveler.phone && <span> • </span>}
-                                                    {traveler.phone && <span>{traveler.phone}</span>}
+                                            {traveler.passportNumber && (
+                                                <div style={{ fontSize: '14px' }}>
+                                                    Passport: {traveler.passportNumber}
+                                                </div>
+                                            )}
+                                            {traveler.dateOfBirth && (
+                                                <div style={{ fontSize: '14px', marginBottom: '2px' }}>
+                                                    DOB: {new Date(traveler.dateOfBirth + "T00:00:00").toLocaleDateString("en-US", {
+                                                        year: "numeric",
+                                                        month: "long",
+                                                        day: "numeric",
+                                                    })}
+                                                </div>
+                                            )}
+                                            {traveler.phone && (
+                                                <div style={{ fontSize: '14px', marginBottom: '2px' }}>
+                                                    Phone: {traveler.phone}
+                                                </div>
+                                            )}
+                                            {traveler.email && (
+                                                <div style={{ fontSize: '14px', marginBottom: '2px' }}>
+                                                    Email: {traveler.email}
                                                 </div>
                                             )}
                                         </div>
