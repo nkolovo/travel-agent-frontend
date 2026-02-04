@@ -199,20 +199,23 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
         )}
       </div>
 
-      {/* Total Trip Cost (Bottom Left) */}
-      <p className="absolute bottom-10 left-6 text-white text-lg bg-black bg-opacity-70 px-1.5 py-0.5 rounded">
-        Total Cost: €{tripCost}
-      </p>
+      {/* Cost Information - Bottom Anchored */}
+      <div className="absolute bottom-10 left-6 flex flex-wrap gap-3 max-w-[calc(100%-8rem)]">
+        {/* Total Trip Cost */}
+        <p className="text-white text-lg bg-black bg-opacity-60 px-1.5 py-0.5 rounded whitespace-nowrap">
+          Total Cost: €{tripCost}
+        </p>
 
-      {/* Net Cost (Under Trip Cost) */}
-      <p className="absolute bottom-10 left-44 text-white text-lg bg-black bg-opacity-70 px-1.5 py-0.5 rounded">
-        Net Cost: €{netCost}
-      </p>
+        {/* Net Cost */}
+        <p className="text-white text-lg bg-black bg-opacity-60 px-1.5 py-0.5 rounded whitespace-nowrap">
+          Net Cost: €{netCost}
+        </p>
 
-      {/* Profit */}
-      <p className="absolute bottom-10 left-80 text-white text-lg bg-black bg-opacity-70 px-1.5 py-0.5 rounded">
-        Profit: €{tripCost - netCost} ({parseFloat(((tripCost - netCost) / tripCost * 100).toFixed(2))}% of trip cost) {/* and percentage */}
-      </p>
+        {/* Profit */}
+        <p className="text-white text-lg bg-black bg-opacity-60 px-1.5 py-0.5 rounded whitespace-nowrap">
+          Profit: {tripCost > 0 ? `€${tripCost - netCost} (${parseFloat(((tripCost - netCost) / tripCost * 100).toFixed(2))}% of trip cost)` : "N/A"}
+        </p>
+      </div>
 
       {/* Change Cover Photo Button (Bottom Right) */}
       <button
