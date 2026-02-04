@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation"; // Import useSearchParams
 import { HiArrowNarrowLeft } from "react-icons/hi";
 import { HiDocumentText, HiEye, HiPaperAirplane } from "react-icons/hi"; // Import new icons
@@ -156,7 +156,12 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
                 "Authorization": `Bearer ${localStorage.getItem("token")}`,
             }
         })
-            .then(res => res.blob())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to generate PDF');
+                }
+                return res.blob();
+            })
             .then(blob => {
                 // Logic for downloading the PDF
                 const url = window.URL.createObjectURL(blob);
@@ -167,6 +172,13 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
                 a.click();
                 a.remove();
                 window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error('Error generating PDF:', error);
+                alert('Failed to generate PDF. Please try again.');
+            })
+            .finally(() => {
+                setIsGeneratingPdf(false);
             });
     }
 
