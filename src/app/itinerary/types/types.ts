@@ -44,6 +44,7 @@ export interface Traveler {
   id?: number;
   firstName: string;
   lastName: string;
+  dateOfBirth?: string;
   email?: string;
   phone?: string;
   passportNumber?: string;

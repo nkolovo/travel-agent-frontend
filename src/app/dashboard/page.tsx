@@ -11,7 +11,7 @@ interface DecodedToken {
   sub: string;
 }
 
-const columnMapping: Record<string, keyof Itinerary> = {
+const columnMapping: Record<string, keyof Itinerary | "profit" | "profitPercentage"> = {
   "Agent": "agent",
   "Date of Creation": "createdDate",
   "Date Sold": "dateSold",
@@ -22,6 +22,8 @@ const columnMapping: Record<string, keyof Itinerary> = {
   "Departure Date": "departureDate",
   "Trip Price": "tripPrice",
   "Net Price": "netPrice",
+  "Profit": "profit",
+  "Profit %": "profitPercentage",
   "Status": "status",
   "Travel Docs Sent": "docsSent",
 };
@@ -104,15 +106,34 @@ export default function Dashboard() {
       .catch((err) => console.error("Error fetching itineraries:", err));
   };
 
-  const handleSort = (column: keyof Itinerary) => {
+  const handleSort = (column: keyof Itinerary | "profit" | "profitPercentage") => {
     const order = sortColumn === column && sortOrder === "asc" ? "desc" : "asc";
 
     setSortColumn(column);
     setSortOrder(order);
 
     setItineraries([...itineraries].sort((a, b) => {
-      const valueA = a[column];
-      const valueB = b[column];
+      let valueA: any;
+      let valueB: any;
+
+      // Handle profit column specially
+      if (column === "profit") {
+        valueA = (a.tripPrice || 0) - (a.netPrice || 0);
+        valueB = (b.tripPrice || 0) - (b.netPrice || 0);
+        return order === "asc" ? valueA - valueB : valueB - valueA;
+      }
+
+      // Handle profit percentage column specially
+      if (column === "profitPercentage") {
+        const profitA = (a.tripPrice || 0) - (a.netPrice || 0);
+        const profitB = (b.tripPrice || 0) - (b.netPrice || 0);
+        valueA = a.tripPrice ? (profitA / a.tripPrice) * 100 : 0;
+        valueB = b.tripPrice ? (profitB / b.tripPrice) * 100 : 0;
+        return order === "asc" ? valueA - valueB : valueB - valueA;
+      }
+
+      valueA = a[column];
+      valueB = b[column];
 
       if (typeof valueA === "string" && typeof valueB === "string") {
         return order === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
@@ -278,6 +299,60 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Profit Summary Section */}
+          <div className="mt-6 mb-6 p-4 border bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200 rounded-lg shadow-md">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">💰 Profit Summary</h2>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {/* Total Trip Price */}
+              <div className="bg-white p-3 rounded-lg shadow">
+                <p className="text-xs text-gray-600 mb-1">Total Trip Price</p>
+                <p className="text-xl font-bold text-gray-700">
+                  €{itineraries.reduce((sum, it) => sum + (it.tripPrice || 0), 0).toLocaleString()}
+                </p>
+              </div>
+
+              {/* Total Net Cost */}
+              <div className="bg-white p-3 rounded-lg shadow">
+                <p className="text-xs text-gray-600 mb-1">Total Net Cost</p>
+                <p className="text-xl font-bold text-orange-600">
+                  €{itineraries.reduce((sum, it) => sum + (it.netPrice || 0), 0).toLocaleString()}
+                </p>
+              </div>
+
+              {/* Total Profit */}
+              <div className="bg-white p-3 rounded-lg shadow">
+                <p className="text-xs text-gray-600 mb-1">Total Profit</p>
+                <p className="text-xl font-bold text-green-600">
+                  €{itineraries.reduce((sum, it) => sum + ((it.tripPrice || 0) - (it.netPrice || 0)), 0).toLocaleString()}
+                </p>
+              </div>
+
+              {/* Average Profit */}
+              <div className="bg-white p-3 rounded-lg shadow">
+                <p className="text-xs text-gray-600 mb-1">Average Profit</p>
+                <p className="text-xl font-bold text-blue-600">
+                  €{itineraries.length > 0
+                    ? (itineraries.reduce((sum, it) => sum + ((it.tripPrice || 0) - (it.netPrice || 0)), 0) / itineraries.length).toLocaleString(undefined, { maximumFractionDigits: 0 })
+                    : '0'}
+                </p>
+              </div>
+
+              {/* Average Profit % */}
+              <div className="bg-white p-3 rounded-lg shadow">
+                <p className="text-xs text-gray-600 mb-1">Average Profit %</p>
+                <p className="text-xl font-bold text-purple-600">
+                  {itineraries.length > 0
+                    ? parseFloat((itineraries.reduce((sum, it) => {
+                      const profit = (it.tripPrice || 0) - (it.netPrice || 0);
+                      const percentage = it.tripPrice ? (profit / it.tripPrice) * 100 : 0;
+                      return sum + percentage;
+                    }, 0) / itineraries.length).toFixed(1))
+                    : '0'}%
+                </p>
+              </div>
+            </div>
+          </div>
+
           <table className="w-full border-collapse border border-gray-300 shadow-md">
             <thead className="bg-gray-200">
               <tr>
@@ -301,7 +376,28 @@ export default function Dashboard() {
                 >
                   {Object.keys(columnMapping).map((col) => {
                     const property = columnMapping[col as keyof typeof columnMapping]; // Get the Itinerary property
-                    let value = itinerary[property]; // Get the value from the itinerary object
+                    let value: any;
+
+                    // Handle calculated Profit column
+                    if (property === "profit") {
+                      const tripPrice = itinerary.tripPrice || 0;
+                      const netPrice = itinerary.netPrice || 0;
+                      const profit = tripPrice - netPrice;
+                      value = `€${profit.toLocaleString()}`;
+                      return <td key={col} className="p-2 border text-sm">{value}</td>;
+                    }
+
+                    // Handle calculated Profit Percentage column
+                    if (property === "profitPercentage") {
+                      const tripPrice = itinerary.tripPrice || 0;
+                      const netPrice = itinerary.netPrice || 0;
+                      const profit = tripPrice - netPrice;
+                      const percentage = tripPrice ? parseFloat(((profit / tripPrice) * 100).toFixed(2)) : 0.0;
+                      value = `${percentage}%`;
+                      return <td key={col} className="p-2 border text-sm">{value}</td>;
+                    }
+
+                    value = itinerary[property as keyof Itinerary]; // Get the value from the itinerary object
 
                     // Format values properly
                     if (property === "createdDate" || property === "editedDate" || property === "arrivalDate" || property === "departureDate") {
@@ -312,9 +408,9 @@ export default function Dashboard() {
                       }) : "N/A";
                     }
                     if (property === "tripPrice") {
-                      value = value ? `$${value.toLocaleString()}` : "N/A";
+                      value = value ? `€${value.toLocaleString()}` : "N/A";
                     } if (property === "netPrice") {
-                      value = value ? `$${value.toLocaleString()}` : "N/A";
+                      value = value ? `€${value.toLocaleString()}` : "N/A";
                     } else if (property === "docsSent") {
                       value = value ? "Yes" : "No";
                       return <td key={col} className={`p-2 border text-sm ${value === "Yes" ? 'bg-green-500' : 'bg-red-500 text-white'}`}>{value.toString()}</td>;

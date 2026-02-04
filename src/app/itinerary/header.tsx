@@ -2,17 +2,14 @@
 
 import { useEffect, useState, useRef } from "react";
 import { FiEdit, FiCamera } from "react-icons/fi";
-import NotesModal from "./notesModal";
 
 interface HeaderProps {
   itineraryId: number;
   retailPrice: number;
   netPrice: number;
-  notes: string | undefined;
-  onNotesUpdate?: (notes: string) => void;
 }
 
-export default function Header({ itineraryId, retailPrice, netPrice, notes, onNotesUpdate }: HeaderProps) {
+export default function Header({ itineraryId, retailPrice, netPrice }: HeaderProps) {
   const [itineraryLoaded, setItineraryLoaded] = useState<boolean>(false);
   const [coverImage, setCoverImage] = useState<string>("");
 
@@ -22,9 +19,6 @@ export default function Header({ itineraryId, retailPrice, netPrice, notes, onNo
   const [tripCost, setTripCost] = useState<number>(retailPrice);
   const [netCost, setNetCost] = useState<number>(netPrice);
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
 
   // Refs to track previous values
   const isFirstRender = useRef(true);
@@ -156,24 +150,8 @@ export default function Header({ itineraryId, retailPrice, netPrice, notes, onNo
     }
   };
 
-  const openModal = () => {
-    setIsModalOpen(true);
-  }
-
-  const closeModal = (updatedNotes?: string) => {
-    setIsModalOpen(false);
-    if (updatedNotes && onNotesUpdate) {
-      onNotesUpdate(updatedNotes);
-      setSuccessMessage("Notes saved successfully");
-      setShowSuccessToast(true);
-      setTimeout(() => setShowSuccessToast(false), 5000);
-    }
-  }
-
   return (
-    <div className="relative w-full h-32 bg-gray-300 rounded-lg overflow-hidden shadow-md">
-      {/* Render the modal */}
-      {isModalOpen && <NotesModal isOpen={isModalOpen} closeModal={closeModal} notes={notes} itineraryId={itineraryId} />}
+    <div className="relative w-full h-48 bg-gray-300 rounded-lg overflow-hidden shadow-md">
       {/* Cover Image */}
       {coverImage ? (
         <img
@@ -188,7 +166,7 @@ export default function Header({ itineraryId, retailPrice, netPrice, notes, onNo
       )}
 
       {/* Overlaying Title & Edit/Save/Cancel Buttons */}
-      <div className="absolute top-2 left-4 flex items-center space-x-2">
+      <div className="absolute top-6 left-6 flex items-center space-x-2">
         {isEditing ? (
           // If in edit mode, show an input field
           <input
@@ -196,11 +174,11 @@ export default function Header({ itineraryId, retailPrice, netPrice, notes, onNo
             value={title}
             onChange={handleTitleChange}
             onKeyDown={handleKeyDown}
-            className="text-white text-lg font-bold drop-shadow-md bg-transparent border-b-2 border-white focus:outline-none max-w-[300px]"
+            className="text-white text-2xl font-bold drop-shadow-md bg-transparent border-b-2 border-white focus:outline-none w-[600px]"
           />
         ) : (
           // If in view mode, just display the title
-          <h1 className="text-white text-lg font-bold drop-shadow-md break-words max-w-[300px]">{title}</h1>
+          <h1 className="text-white text-2xl font-bold drop-shadow-md break-words max-w-[600px] line-clamp-2">{title}</h1>
         )}
 
         {isEditing ? (
@@ -221,17 +199,20 @@ export default function Header({ itineraryId, retailPrice, netPrice, notes, onNo
         )}
       </div>
 
-      {/* Total Trip Cost (Under Title) */}
-      <p className="absolute top-9 left-4 text-white text-sm drop-shadow-md">
+      {/* Total Trip Cost (Bottom Left) */}
+      <p className="absolute bottom-10 left-6 text-white text-lg bg-black bg-opacity-70 px-1.5 py-0.5 rounded">
         Total Cost: €{tripCost}
       </p>
 
       {/* Net Cost (Under Trip Cost) */}
-      <p className="absolute top-14 left-4 text-white text-sm drop-shadow-md">
+      <p className="absolute bottom-10 left-44 text-white text-lg bg-black bg-opacity-70 px-1.5 py-0.5 rounded">
         Net Cost: €{netCost}
       </p>
 
-      <button className="absolute top-20 left-4 bg-purple-500 text-white px-4 py-2 rounded shadow hover:bg-purple-600" onClick={() => openModal()}>Notes</button>
+      {/* Profit */}
+      <p className="absolute bottom-10 left-80 text-white text-lg bg-black bg-opacity-70 px-1.5 py-0.5 rounded">
+        Profit: €{tripCost - netCost} ({parseFloat(((tripCost - netCost) / tripCost * 100).toFixed(2))}% of trip cost) {/* and percentage */}
+      </p>
 
       {/* Change Cover Photo Button (Bottom Right) */}
       <button
@@ -249,11 +230,6 @@ export default function Header({ itineraryId, retailPrice, netPrice, notes, onNo
         className="hidden"
         onChange={handleCoverImageChange}
       />
-      {showSuccessToast && (
-        <div className="toast-notification">
-          <span>✓ {successMessage}</span>
-        </div>
-      )}
     </div>
   );
 }

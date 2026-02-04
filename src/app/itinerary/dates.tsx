@@ -74,8 +74,10 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
             prevDate.date !== newDate.date
           );
         });
-        if (modifiedDate)
+        if (modifiedDate) {
           saveChanges(modifiedDate);
+          setPrevDates(dates.map(date => ({ ...date }))); // Update prevDates after saving
+        }
       }
     }, 1000);
     return () => clearTimeout(timeout);
@@ -170,24 +172,16 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
 
             <div className="mt-3">
               <div className="flex items-center space-x-1">
-                <div 
-                  className="inline-flex items-center space-x-1 p-1 rounded-lg cursor-pointer hover:bg-gray-50 focus-within:ring-1 focus-within:ring-blue-500 relative"
-                  onClick={(e) => {
-                    const input = e.currentTarget.querySelector('input') as HTMLInputElement;
-                    input.focus();
-                    input.select();
-                  }}
-                >
-                  <FiEdit className="text-gray-500 text-xs flex-shrink-0" />
-                  <span className="font-semibold text-sm">{date.name}</span>
-                  <input
-                    id={`date-input-${index}`}
-                    type="text"
-                    value={date.name}
-                    onChange={(e) => handleNameChange(index, e.target.value)}
-                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer bg-transparent border-none"
-                  />
-                </div>
+                <FiEdit className="text-gray-500 text-xs flex-shrink-0" />
+                <input
+                  id={`date-input-${index}`}
+                  type="text"
+                  value={date.name}
+                  onChange={(e) => handleNameChange(index, e.target.value)}
+                  size={Math.max(date.name.length - 2, 1)}
+                  className="font-semibold text-sm bg-transparent border-none outline-none focus:bg-white focus:border focus:border-blue-500 focus:px-1 focus:rounded cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                />
               </div>
             </div>
           </li>
