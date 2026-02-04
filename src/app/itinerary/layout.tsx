@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation"; // Import useSearchParams
 import { HiArrowNarrowLeft } from "react-icons/hi";
 import { HiDocumentText, HiEye, HiPaperAirplane } from "react-icons/hi"; // Import new icons
@@ -9,6 +9,7 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
     const router = useRouter();
     const params = useParams();
     const searchParams = useSearchParams(); // Get query params from the URL
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     // Define a mapping of query parameter keys to custom display names
     const customNames: Record<string, string> = {
@@ -58,13 +59,21 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
             console.warn("No itinerary id found");
             return;
         }
+        
+        setIsGeneratingPdf(true);
+        
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/generate-pdf/${itineraryId}`, {
             method: "GET",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("token")}`,
             }
         })
-            .then(res => res.blob())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to generate PDF');
+                }
+                return res.blob();
+            })
             .then(blob => {
                 // Logic for downloading the PDF
                 const url = window.URL.createObjectURL(blob);
@@ -75,6 +84,13 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
                 a.click();
                 a.remove();
                 window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error('Error generating PDF:', error);
+                alert('Failed to generate PDF. Please try again.');
+            })
+            .finally(() => {
+                setIsGeneratingPdf(false);
             });
     }
 
@@ -122,11 +138,39 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
 
                     {/* PDF Button */}
                     <button
-                        className="flex items-center text-gray-600 hover:text-gray-800 transition-all duration-200 p-1"
-                        title="Generate PDF"
+                        className={`flex items-center transition-all duration-200 p-1 ${
+                            isGeneratingPdf 
+                                ? 'text-blue-500 cursor-not-allowed' 
+                                : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                        title={isGeneratingPdf ? "Generating PDF..." : "Generate PDF"}
                         onClick={() => generatePdf()}
+                        disabled={isGeneratingPdf}
                     >
-                        <HiDocumentText className="text-lg" />
+                        {isGeneratingPdf ? (
+                            <svg 
+                                className="animate-spin h-5 w-5" 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                fill="none" 
+                                viewBox="0 0 24 24"
+                            >
+                                <circle 
+                                    className="opacity-25" 
+                                    cx="12" 
+                                    cy="12" 
+                                    r="10" 
+                                    stroke="currentColor" 
+                                    strokeWidth="4"
+                                ></circle>
+                                <path 
+                                    className="opacity-75" 
+                                    fill="currentColor" 
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                        ) : (
+                            <HiDocumentText className="text-lg" />
+                        )}
                     </button>
 
                     {/* Send Button */}
