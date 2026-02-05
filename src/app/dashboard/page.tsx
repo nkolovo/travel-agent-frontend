@@ -64,7 +64,6 @@ export default function Dashboard() {
       setIsAuthenticated(true);
       try {
         const decoded: DecodedToken = jwtDecode(token);
-        console.log(decoded);
         setNewItinerary((prev) => ({ ...prev, agent: decoded.sub })); // Autofill agent
         setUserRole(decoded.role || ""); // Set user role
         setUsername(decoded.sub || ""); // Set username

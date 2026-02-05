@@ -98,6 +98,16 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
             case "highlight":
                 document.execCommand("hiliteColor", false, value || "yellow");
                 break;
+            case "fontSize":
+                if (value) {
+                    document.execCommand("fontSize", false, value);
+                }
+                break;
+            case "foreColor":
+                if (value) {
+                    document.execCommand("foreColor", false, value);
+                }
+                break;
             case "removeHighlight":
                 document.execCommand("hiliteColor", false, "transparent");
                 break;
@@ -804,6 +814,23 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                         <span className="modal-row-label">Title</span>
                         <div className="modal-row-content">
                             <div className="title-toolbar">
+                                <select
+                                    onChange={(e) => handleFormat("fontSize", titleRef, setActiveTitleFormats, e.target.value)}
+                                    style={{ margin: "0 4px", padding: "2px" }}
+                                    title="Font Size"
+                                >
+                                    <option value="">Size</option>
+                                    <option value="1">Small</option>
+                                    <option value="3">Normal</option>
+                                    <option value="5">Large</option>
+                                    <option value="7">Huge</option>
+                                </select>
+                                <input
+                                    type="color"
+                                    onChange={(e) => handleFormat("foreColor", titleRef, setActiveTitleFormats, e.target.value)}
+                                    style={{ margin: "0 4px", width: "40px", height: "24px", cursor: "pointer" }}
+                                    title="Font Color"
+                                />
                                 <button
                                     className={activeTitleFormats.includes("bold") ? "active" : ""}
                                     onClick={() => handleFormat("bold", titleRef, setActiveTitleFormats)}
@@ -888,6 +915,23 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                         <span className="modal-row-label">Description</span>
                         <div className="modal-row-content">
                             <div className="description-toolbar">
+                                <select
+                                    onChange={(e) => handleFormat("fontSize", descriptionRef, setActiveDescriptionFormats, e.target.value)}
+                                    style={{ margin: "0 4px", padding: "2px" }}
+                                    title="Font Size"
+                                >
+                                    <option value="">Size</option>
+                                    <option value="1">Small</option>
+                                    <option value="3">Normal</option>
+                                    <option value="5">Large</option>
+                                    <option value="7">Huge</option>
+                                </select>
+                                <input
+                                    type="color"
+                                    onChange={(e) => handleFormat("foreColor", descriptionRef, setActiveDescriptionFormats, e.target.value)}
+                                    style={{ margin: "0 4px", width: "40px", height: "24px", cursor: "pointer" }}
+                                    title="Font Color"
+                                />
                                 <button
                                     className={activeDescriptionFormats.includes("bold") ? "active" : ""}
                                     onClick={() => handleFormat("bold", descriptionRef, setActiveDescriptionFormats)}
