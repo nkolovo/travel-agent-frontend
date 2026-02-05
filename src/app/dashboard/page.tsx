@@ -9,6 +9,7 @@ import SupplierModal from "./supplierModal";
 
 interface DecodedToken {
   sub: string;
+  role?: string;
 }
 
 const columnMapping: Record<string, keyof Itinerary | "profit" | "profitPercentage"> = {
@@ -31,6 +32,8 @@ const columnMapping: Record<string, keyof Itinerary | "profit" | "profitPercenta
 export default function Dashboard() {
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [userRole, setUserRole] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
   const [filters, setFilters] = useState({
     reservationNumber: "",
     leadName: ""
@@ -61,7 +64,10 @@ export default function Dashboard() {
       setIsAuthenticated(true);
       try {
         const decoded: DecodedToken = jwtDecode(token);
+        console.log(decoded);
         setNewItinerary((prev) => ({ ...prev, agent: decoded.sub })); // Autofill agent
+        setUserRole(decoded.role || ""); // Set user role
+        setUsername(decoded.sub || ""); // Set username
       } catch (error) {
         console.error("Invalid token:", error);
       }
@@ -240,6 +246,34 @@ export default function Dashboard() {
     router.push(`/itinerary/${itinerary.id}?${queryString}`);
   }
 
+  const handleDeleteItinerary = async (itinerary: Itinerary, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click
+    if (!window.confirm(`Are you sure you want to delete itinerary ${itinerary.reservationNumber}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/delete/${itinerary.id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (response.ok) {
+        setItineraries(itineraries.filter(i => i.id !== itinerary.id));
+        setSuccessMessage("Itinerary deleted successfully");
+        setShowSuccessToast(true);
+        setTimeout(() => setShowSuccessToast(false), 3000);
+      } else {
+        window.alert("Failed to delete itinerary. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting itinerary:", error);
+      window.alert("Failed to delete itinerary. Please try again.");
+    }
+  }
+
   const openItemModal = () => {
     setIsItemModalOpen(true);
   }
@@ -369,6 +403,7 @@ export default function Dashboard() {
                     {col} {sortColumn === columnMapping[col] ? (sortOrder === "asc" ? "▲" : "▼") : ""}
                   </th>
                 ))}
+                {(userRole === "ADMIN" || username === "cleontopoulos") && <th className="p-2 border text-sm">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -424,6 +459,17 @@ export default function Dashboard() {
 
                     return <td key={col} className="p-2 border text-sm">{value.toString()}</td>;
                   })}
+                  {(userRole === "ADMIN" || username === "cleontopoulos") && (
+                    <td className="p-2 border text-sm text-center">
+                      <button
+                        onClick={(e) => handleDeleteItinerary(itinerary, e)}
+                        className="text-red-600 hover:text-red-800 transition duration-150 text-lg font-bold"
+                        title="Delete itinerary"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
