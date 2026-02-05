@@ -175,6 +175,10 @@ export default function Dashboard() {
     }));
   };
 
+  const isLeadNameValid = (leadName: string): boolean => {
+    return leadName.trim().includes('/');
+  };
+
   const handleAddItinerary = async () => {
     if (!newItinerary.leadName.trim() || !newItinerary.numTravelers) {
       window.alert("Please enter the Lead Name and Number of Travelers.");
@@ -221,7 +225,7 @@ export default function Dashboard() {
   };
 
   const handleKeyDownItinerary = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter" && (newItinerary.leadName && newItinerary.numTravelers))
+    if (event.key === "Enter" && (newItinerary.leadName && isLeadNameValid(newItinerary.leadName) && newItinerary.numTravelers))
       handleAddItinerary();
   }
 
@@ -278,14 +282,14 @@ export default function Dashboard() {
               <input type="text" id="reservationNumber" name="reservationNumber" value={newItinerary.reservationNumber} readOnly className="p-2 border rounded bg-gray-200" />
               <div className="flex flex-col">
                 <input type="text" id="leadName" name="leadName" placeholder="Lead Name" value={newItinerary.leadName} onKeyDown={handleKeyDownItinerary} onChange={handleNewItineraryChange} className="p-2 border rounded" />
-                <span className="text-xs text-gray-500 mt-1">Last / First, Middle</span>
+                <span className={`text-xs mt-1 ${newItinerary.leadName && !isLeadNameValid(newItinerary.leadName) ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>Last / First, Middle</span>
               </div>
               <div className="flex flex-col">
                 <input type="number" id="numTravelers" name="numTravelers" placeholder="Number of Adults" value={newItinerary.numTravelers} onKeyDown={handleKeyDownItinerary} onChange={handleNewItineraryChange} min="1" className="p-2 border rounded" />
                 <span className="text-xs text-gray-500 mt-1">Number of Travelers</span>
               </div>
             </div>
-            <button className={`bg-blue-500 text-white px-4 py-2 rounded ${newItinerary.leadName && newItinerary.numTravelers > 0 ? "bg-blue-500 text-white" : "bg-gray-400 cursor-not-allowed"}`} onClick={handleAddItinerary}>Add Itinerary</button>
+            <button className={`text-white px-4 py-2 rounded ${newItinerary.leadName && isLeadNameValid(newItinerary.leadName) && newItinerary.numTravelers > 0 ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-400 cursor-not-allowed"}`} disabled={!newItinerary.leadName || !isLeadNameValid(newItinerary.leadName) || !newItinerary.numTravelers} onClick={handleAddItinerary}>Add Itinerary</button>
           </div>
 
           <div className="mt-10 flex justify-between items-center mb-6 p-4 bg-gray-100 rounded-lg shadow-md">

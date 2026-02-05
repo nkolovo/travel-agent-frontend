@@ -58,7 +58,7 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
         }
 
         setIsPreviewingPdf(true);
-        
+
         // Open window immediately to avoid popup blocker
         const newWindow = window.open('', '_blank');
         if (!newWindow) {
@@ -66,7 +66,7 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
             setIsPreviewingPdf(false);
             return;
         }
-        
+
         // Write loading message to the new window
         newWindow.document.write(`
             <html>
@@ -182,8 +182,155 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
             });
     }
 
-    function sendItineraryToLead(): void {
-        console.log("Function not implemented.");
+    async function sendItineraryToLead(): Promise<void> {
+        const itineraryId = params.id;
+        if (!itineraryId) {
+            console.warn("No itinerary id found");
+            return;
+        }
+
+        try {
+            // Show loading state
+            const sendButton = document.querySelector('[title="Send to lead"]') as HTMLButtonElement;
+            if (sendButton) {
+                sendButton.disabled = true;
+                sendButton.classList.add('cursor-not-allowed', 'text-blue-500');
+            }
+
+            // Generate a shareable PDF URL
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/generate-shareable-link/${itineraryId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to generate shareable link');
+            }
+
+            const data = await response.json();
+            const shareableUrl = data.url || data.shareableUrl;
+
+            // Get itinerary details
+            const itineraryResponse = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/${itineraryId}`,
+                {
+                    headers: {
+                        "Authorization": `Bearer ${localStorage.getItem("token")}`
+                    }
+                }
+            );
+
+            if (!itineraryResponse.ok) {
+                throw new Error('Failed to fetch itinerary details');
+            }
+
+            const itinerary = await itineraryResponse.json();
+
+            // Get travelers to find lead email
+            const travelersResponse = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/${itineraryId}/travelers`,
+                {
+                    headers: {
+                        "Authorization": `Bearer ${localStorage.getItem("token")}`
+                    }
+                }
+            );
+
+            let leadEmail = '';
+            const leadNameParam = searchParams.get('leadName') || '';
+
+            if (travelersResponse.ok) {
+                const travelers = await travelersResponse.json();
+
+                // Parse lead name format: "Last Name / First Name, Middle name"
+                // Match against travelers with lastName and firstName (which includes middle name)
+                if (leadNameParam && travelers.length > 0) {
+                    const leadParts = leadNameParam.split(' / ');
+                    if (leadParts.length === 2) {
+                        const leadLastName = leadParts[0].trim();
+                        const leadFirstName = leadParts[1].trim().replace(',', ''); // "First Name, Middle" -> "First Name Middle"
+
+                        // Find matching traveler
+                        const matchingTraveler = travelers.find((traveler: any) => {
+                            const travelerFullName = `${traveler.firstName || ''}`.trim().replace(',', '');
+                            return traveler.lastName?.trim() === leadLastName &&
+                                travelerFullName === leadFirstName;
+                        });
+
+                        if (matchingTraveler?.email) {
+                            leadEmail = matchingTraveler.email;
+                        }
+                    }
+                }
+            }
+
+            if (!leadEmail) {
+                alert(`Lead email not found. Please ensure the lead traveler has an email address, 
+                    it can be populated under Manage Travelers. Lead name must be of the syntax 
+                    "Last Name / First Name, Middle Name" to match correctly. E.g. "Kolovos / Nikolas, Ioannis" or "Leontopoulos / Chris".`);
+                throw new Error('Lead email not found');
+            }
+
+            const leadName = leadNameParam;
+
+            // Get agent info from localStorage or use defaults
+            const agentName = localStorage.getItem('agentName') || searchParams.get('agent') || 'Your Travel Agent';
+            const agentEmail = localStorage.getItem('agentEmail') || 'agent@travelagency.com';
+            const agentPhone = localStorage.getItem('agentPhone') || '(555) 123-4567';
+            const companyName = localStorage.getItem('companyName') || 'Premier Travel Agency';
+
+            // Construct email template
+            const subject = encodeURIComponent(`Your Travel Itinerary - ${leadName}`);
+            const body = encodeURIComponent(`Dear ${leadName.split(' / ')[1]?.split(',')[0].trim() || leadName},
+
+Thank you for choosing ${companyName} for your upcoming travel plans! We're excited to help make your trip memorable.
+
+Your personalized itinerary is ready for review. You can access it anytime using the link below:
+
+${shareableUrl}
+
+Please review the details carefully. If you have any questions or need to make changes, don't hesitate to reach out.
+
+We look forward to serving you!
+
+Best regards,
+
+---
+${agentName}
+${companyName}
+Email: ${agentEmail}
+Phone: ${agentPhone}
+
+---
+This email and any attachments are confidential and intended solely for the recipient. If you received this in error, please delete it and notify us immediately.
+`);
+
+            // Open email client with pre-filled template
+            window.location.href = `mailto:${leadEmail}?subject=${subject}&body=${body}`;
+
+            // Reset button state
+            if (sendButton) {
+                sendButton.disabled = false;
+                sendButton.classList.remove('cursor-not-allowed', 'text-blue-500');
+            }
+
+        } catch (error) {
+            console.error('Error sending itinerary to lead:', error);
+            alert('Failed to prepare email. Please try again.');
+
+            // Reset button state
+            const sendButton = document.querySelector('[title="Send to lead"]') as HTMLButtonElement;
+            if (sendButton) {
+                sendButton.disabled = false;
+                sendButton.classList.remove('cursor-not-allowed', 'text-blue-500');
+            }
+        }
     }
 
     return (
@@ -218,8 +365,8 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
                     {/* Preview Button */}
                     <button
                         className={`flex items-center transition-all duration-200 p-1 ${isPreviewingPdf
-                                ? 'text-blue-500 cursor-not-allowed'
-                                : 'text-gray-600 hover:text-gray-800'
+                            ? 'text-blue-500 cursor-not-allowed'
+                            : 'text-gray-600 hover:text-gray-800'
                             }`}
                         title={isPreviewingPdf ? "Previewing Itinerary..." : "Preview Itinerary"}
                         onClick={() => previewItinerary()}
@@ -254,8 +401,8 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
                     {/* PDF Button */}
                     <button
                         className={`flex items-center transition-all duration-200 p-1 ${isGeneratingPdf
-                                ? 'text-blue-500 cursor-not-allowed'
-                                : 'text-gray-600 hover:text-gray-800'
+                            ? 'text-blue-500 cursor-not-allowed'
+                            : 'text-gray-600 hover:text-gray-800'
                             }`}
                         title={isGeneratingPdf ? "Generating PDF..." : "Generate PDF"}
                         onClick={() => generatePdf()}
