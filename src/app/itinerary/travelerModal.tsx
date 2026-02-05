@@ -364,11 +364,13 @@ const TravelerModal: React.FC<TravelerModalProps> = ({ isOpen, closeModal, itine
                                             )}
                                             {traveler.dateOfBirth && (
                                                 <div style={{ fontSize: '14px', marginBottom: '2px' }}>
-                                                    DOB: {new Date(traveler.dateOfBirth + "T00:00:00").toLocaleDateString("en-US", {
-                                                        year: "numeric",
-                                                        month: "long",
-                                                        day: "numeric",
-                                                    })}
+                                                    DOB: {(() => {
+                                                        const d = new Date(traveler.dateOfBirth + "T00:00:00");
+                                                        const day = d.toLocaleDateString("en-GB", { day: "2-digit" });
+                                                        const month = d.toLocaleDateString("en-GB", { month: "long" });
+                                                        const year = d.toLocaleDateString("en-GB", { year: "numeric" });
+                                                        return `${day} ${month}, ${year}`;
+                                                    })()}
                                                 </div>
                                             )}
                                             {traveler.phone && (

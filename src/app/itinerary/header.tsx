@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { FiEdit, FiCamera } from "react-icons/fi";
 
 interface HeaderProps {
@@ -10,22 +11,27 @@ interface HeaderProps {
 }
 
 export default function Header({ itineraryId, retailPrice, netPrice }: HeaderProps) {
+  const searchParams = useSearchParams();
   const [itineraryLoaded, setItineraryLoaded] = useState<boolean>(false);
   const [coverImage, setCoverImage] = useState<string>("");
 
   // States to track current values
   const [title, setTitle] = useState<string>("Insert Title Here");
   const [originalTitle, setOriginalTitle] = useState<string>("Insert Title Here");
+  const [leadName, setLeadName] = useState<string>(searchParams.get('leadName') || "Lead Name");
+  const [originalLeadName, setOriginalLeadName] = useState<string>(leadName);
   const [tripCost, setTripCost] = useState<number>(retailPrice);
   const [netCost, setNetCost] = useState<number>(netPrice);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false);
+  const [isEditingLeadName, setIsEditingLeadName] = useState<boolean>(false);
 
   // Refs to track previous values
   const isFirstRender = useRef(true);
   const prevTitle = useRef(title);
+  const prevLeadName = useRef(leadName);
 
   const saveChanges = async () => {
-    const updatedData = { itineraryId, title, tripCost, netCost };
+    const updatedData = { itineraryId, title, leadName, tripCost, netCost };
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/update`, {
         method: "PATCH",
@@ -37,13 +43,14 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
       });
       // Update previous values after a successful save
       prevTitle.current = title;
+      prevLeadName.current = leadName;
     } catch (error) {
       console.error("Error saving changes:", error);
     }
   };
 
   useEffect(() => {
-    if (!isEditing) {
+    if (!isEditingTitle) {
       setTripCost(retailPrice ?? 0);
       setNetCost(netPrice ?? 0);
     }
@@ -66,10 +73,12 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
         .then(data => {
           setItineraryLoaded(true);
           setTitle(data.name ?? title)
+          setLeadName(data.leadName ?? leadName)
           setTripCost(data.tripPrice ?? tripCost)
           setNetCost(data.netPrice ?? netCost)
           setCoverImage(data.coverImageUrl ?? "")
           prevTitle.current = data.name ?? title;
+          prevLeadName.current = data.leadName ?? leadName;
         }).catch(error => console.error("Error fetching itinerary:", error))
     };
 
@@ -84,11 +93,11 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
     }
 
     const timeout = setTimeout(() => {
-      if ((title !== prevTitle.current) && !isEditing)
+      if (((title !== prevTitle.current) && !isEditingTitle) || ((leadName !== prevLeadName.current) && !isEditingLeadName))
         saveChanges();
     }, 1000);
     return () => clearTimeout(timeout);
-  }, [title, coverImage, isEditing, itineraryLoaded]);
+  }, [title, leadName, coverImage, isEditingTitle, isEditingLeadName, itineraryLoaded]);
 
   const handleCoverImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -128,25 +137,51 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
   };
 
   const toggleEditMode = () => {
-    setIsEditing(!isEditing);
-    if (!isEditing) {
+    setIsEditingTitle(!isEditingTitle);
+    if (!isEditingTitle) {
       // Save the original title when entering edit mode
       setOriginalTitle(title);
     }
   };
 
   const saveTitle = () => {
-    setIsEditing(false);
+    setIsEditingTitle(false);
   };
 
   const cancelEdit = () => {
     setTitle(originalTitle); // Revert to original title
-    setIsEditing(false);
+    setIsEditingTitle(false);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       saveTitle();
+    }
+  };
+
+  const handleLeadNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setLeadName(event.target.value);
+  };
+
+  const toggleEditLeadName = () => {
+    setIsEditingLeadName(!isEditingLeadName);
+    if (!isEditingLeadName) {
+      setOriginalLeadName(leadName);
+    }
+  };
+
+  const saveLeadName = () => {
+    setIsEditingLeadName(false);
+  };
+
+  const cancelEditLeadName = () => {
+    setLeadName(originalLeadName);
+    setIsEditingLeadName(false);
+  };
+
+  const handleLeadNameKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      saveLeadName();
     }
   };
 
@@ -166,54 +201,86 @@ export default function Header({ itineraryId, retailPrice, netPrice }: HeaderPro
       )}
 
       {/* Overlaying Title & Edit/Save/Cancel Buttons */}
-      <div className="absolute top-6 left-6 flex items-center space-x-2">
-        {isEditing ? (
-          // If in edit mode, show an input field
-          <input
-            type="text"
-            value={title}
-            onChange={handleTitleChange}
-            onKeyDown={handleKeyDown}
-            className="text-white text-2xl font-bold drop-shadow-md bg-transparent border-b-2 border-white focus:outline-none w-[600px]"
-          />
-        ) : (
-          // If in view mode, just display the title
-          <h1 className="text-white text-2xl font-bold drop-shadow-md break-words max-w-[600px] line-clamp-2">{title}</h1>
-        )}
+      <div className="absolute top-3 left-6 flex flex-col space-y-2">
+        <div className="flex items-center space-x-2">
+          {isEditingTitle ? (
+            // If in edit mode, show an input field
+            <input
+              type="text"
+              value={title}
+              onChange={handleTitleChange}
+              onKeyDown={handleKeyDown}
+              className="text-white text-2xl font-semibold bg-black bg-opacity-60 px-1 rounded w-[600px] border-b-2 border-white focus:outline-none"
+            />
+          ) : (
+            // If in view mode, just display the title
+            <h1 className="text-white text-2xl font-semibold bg-black bg-opacity-60 px-1 rounded break-words max-w-[600px] line-clamp-2">{title}</h1>
+          )}
 
-        {isEditing ? (
-          <div className="flex space-x-1">
-            {/* Show Save and Cancel buttons when editing */}
-            <button onClick={saveTitle} className="text-white text-xs hover:text-gray-200 bg-green-600 px-2 py-1 rounded">
-              Save
+          {isEditingTitle ? (
+            <div className="flex space-x-1">
+              {/* Show Save and Cancel buttons when editing */}
+              <button onClick={saveTitle} className="text-white text-xs hover:text-gray-200 bg-green-600 px-2 py-1 rounded">
+                Save
+              </button>
+              <button onClick={cancelEdit} className="text-white text-xs hover:text-gray-200 bg-red-600 px-2 py-1 rounded">
+                Cancel
+              </button>
+            </div>
+          ) : (
+            // Show Edit button when not editing
+            <button onClick={toggleEditMode}>
+              <FiEdit className="text-white text-base hover:text-gray-200 transition" />
             </button>
-            <button onClick={cancelEdit} className="text-white text-xs hover:text-gray-200 bg-red-600 px-2 py-1 rounded">
-              Cancel
+          )}
+        </div>
+
+        {/* Lead Name - Editable */}
+        <div className="flex items-center space-x-2">
+          {isEditingLeadName ? (
+            <input
+              type="text"
+              value={leadName}
+              onChange={handleLeadNameChange}
+              onKeyDown={handleLeadNameKeyDown}
+              className="text-white text-lg font-semibold bg-black bg-opacity-60 px-1 rounded w-[400px] border-b-2 border-white focus:outline-none"
+            />
+          ) : (
+            <h2 className="text-white text-lg font-semibold bg-black bg-opacity-60 px-1 rounded break-words">{leadName}</h2>
+          )}
+
+          {isEditingLeadName ? (
+            <div className="flex space-x-1">
+              <button onClick={saveLeadName} className="text-white text-xs hover:text-gray-200 bg-green-600 px-2 py-1 rounded">
+                Save
+              </button>
+              <button onClick={cancelEditLeadName} className="text-white text-xs hover:text-gray-200 bg-red-600 px-2 py-1 rounded">
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button onClick={toggleEditLeadName}>
+              <FiEdit className="text-white text-sm hover:text-gray-200 transition" />
             </button>
-          </div>
-        ) : (
-          // Show Edit button when not editing
-          <button onClick={toggleEditMode}>
-            <FiEdit className="text-white text-base hover:text-gray-200 transition" />
-          </button>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Cost Information - Bottom Anchored */}
-      <div className="absolute bottom-10 left-6 flex flex-wrap gap-3 max-w-[calc(100%-8rem)]">
-        {/* Total Trip Cost */}
-        <p className="text-white text-lg bg-black bg-opacity-60 px-1.5 py-0.5 rounded whitespace-nowrap">
-          Total Cost: €{tripCost}
+      <div className="absolute bottom-2 left-6 flex flex-col gap-1 max-w-[calc(100%-8rem)]">
+        {/* Retail Price */}
+        <p className="text-white text-xs bg-black bg-opacity-60 px-1 rounded whitespace-nowrap w-fit">
+          Retail Price: €{tripCost.toLocaleString()}
         </p>
 
         {/* Net Cost */}
-        <p className="text-white text-lg bg-black bg-opacity-60 px-1.5 py-0.5 rounded whitespace-nowrap">
-          Net Cost: €{netCost}
+        <p className="text-white text-xs bg-black bg-opacity-60 px-1 rounded whitespace-nowrap w-fit">
+          Net Cost: €{netCost.toLocaleString()}
         </p>
 
         {/* Profit */}
-        <p className="text-white text-lg bg-black bg-opacity-60 px-1.5 py-0.5 rounded whitespace-nowrap">
-          Profit: {tripCost > 0 ? `€${tripCost - netCost} (${parseFloat(((tripCost - netCost) / tripCost * 100).toFixed(2))}% of trip cost)` : "N/A"}
+        <p className="text-white text-xs bg-black bg-opacity-60 px-1 rounded whitespace-nowrap w-fit">
+          Profit: {tripCost > 0 ? `€${(tripCost - netCost).toLocaleString()} (${parseFloat(((tripCost - netCost) / tripCost * 100).toFixed(2))}%)` : "N/A"}
         </p>
       </div>
 

@@ -142,11 +142,13 @@ const DateList: React.FC<DateListProps> = ({ itineraryId, dates, onSelectedDate,
                 >
                   <FiCalendar className="flex-shrink-0" />
                   <span>
-                    {new Date(date.date + 'T00:00:00').toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    {(() => {
+                      const d = new Date(date.date + 'T00:00:00');
+                      const day = d.toLocaleDateString('en-GB', { day: '2-digit' });
+                      const month = d.toLocaleDateString('en-GB', { month: 'long' });
+                      const year = d.toLocaleDateString('en-GB', { year: 'numeric' });
+                      return `${day} ${month}, ${year}`;
+                    })()}
                   </span>
                   <input
                     type="date"

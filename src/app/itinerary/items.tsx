@@ -285,7 +285,10 @@ const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem, onChange }) =>
                     <h3 className="font-medium text-xs" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.name) }} />
                     <p className="text-xs text-gray-600" dangerouslySetInnerHTML={{ __html: truncateDescription(item.description, 50) }} />
                     <p className="text-xs text-gray-500">{item.location}</p>
-                    <p className="text-xs text-gray-700">€{item.retailPrice > 0 ? item.retailPrice : "N/A"}</p>
+                    {item.retailPrice > 0 ?
+                      <p className="text-xs text-gray-700">€{item.retailPrice.toLocaleString()}</p>
+                      : null
+                    }
                   </button>
                   <button
                     onClick={() => onItemEdit(item)}

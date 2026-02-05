@@ -273,8 +273,8 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange, n
                               {/* Description */}
                               <p className='text-gray-600' dangerouslySetInnerHTML={{ __html: truncateDescription(activity.description) }} />
                             </div>
-                            <p className="text-xs text-gray-700">Retail Price: {activity.retailPrice > 0 ? activity.retailPrice : "N/A"}</p>
-                            <p className="text-xs text-gray-700">Net Price: {activity.netPrice > 0 ? activity.netPrice : "N/A"}</p>
+                            <p className="text-xs text-gray-700">Retail Price: {activity.retailPrice > 0 ? `€${activity.retailPrice.toLocaleString()}` : "N/A"}</p>
+                            <p className="text-xs text-gray-700">Net Price: {activity.netPrice > 0 ? `€${activity.netPrice.toLocaleString()}` : "N/A"}</p>
                           </div>
                         </div>
                       )}
