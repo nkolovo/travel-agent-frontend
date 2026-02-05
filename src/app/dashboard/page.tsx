@@ -33,6 +33,7 @@ export default function Dashboard() {
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
   const [filters, setFilters] = useState({
     reservationNumber: "",
     leadName: ""
@@ -66,6 +67,7 @@ export default function Dashboard() {
         console.log(decoded);
         setNewItinerary((prev) => ({ ...prev, agent: decoded.sub })); // Autofill agent
         setUserRole(decoded.role || ""); // Set user role
+        setUsername(decoded.sub || ""); // Set username
       } catch (error) {
         console.error("Invalid token:", error);
       }
@@ -401,7 +403,7 @@ export default function Dashboard() {
                     {col} {sortColumn === columnMapping[col] ? (sortOrder === "asc" ? "▲" : "▼") : ""}
                   </th>
                 ))}
-                {userRole === "ADMIN" && <th className="p-2 border text-sm">Actions</th>}
+                {(userRole === "ADMIN" || username === "cleontopoulos") && <th className="p-2 border text-sm">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -457,7 +459,7 @@ export default function Dashboard() {
 
                     return <td key={col} className="p-2 border text-sm">{value.toString()}</td>;
                   })}
-                  {userRole === "ADMIN" && (
+                  {(userRole === "ADMIN" || username === "cleontopoulos") && (
                     <td className="p-2 border text-sm text-center">
                       <button
                         onClick={(e) => handleDeleteItinerary(itinerary, e)}
