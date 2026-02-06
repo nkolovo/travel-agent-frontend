@@ -300,7 +300,7 @@ Thank you for choosing ${companyName} for your upcoming travel plans! We're exci
 
 Your personalized itinerary is ready for review. You can access it anytime using the link below:
 
-<${shareableUrl}>
+${shareableUrl}
 
 Please review the details carefully. If you have any questions or need to make changes, don't hesitate to reach out.
 
