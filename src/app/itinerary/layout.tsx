@@ -214,23 +214,7 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
             }
 
             const data = await response.json();
-            const shareableUrl = data.url || data.shareableUrl;
-
-            // Get itinerary details
-            const itineraryResponse = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/${itineraryId}`,
-                {
-                    headers: {
-                        "Authorization": `Bearer ${localStorage.getItem("token")}`
-                    }
-                }
-            );
-
-            if (!itineraryResponse.ok) {
-                throw new Error('Failed to fetch itinerary details');
-            }
-
-            const itinerary = await itineraryResponse.json();
+            const shareableUrl = data.shareableUrl;
 
             // Get travelers to find lead email
             const travelersResponse = await fetch(
@@ -271,19 +255,42 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
             }
 
             if (!leadEmail) {
-                alert(`Lead email not found. Please ensure the lead traveler has an email address, 
-                    it can be populated under Manage Travelers. Lead name must be of the syntax 
-                    "Last Name / First Name, Middle Name" to match correctly. E.g. "Kolovos / Nikolas, Ioannis" or "Leontopoulos / Chris".`);
+                alert(`Lead email not found. Please ensure the lead traveler has an email address, it can be populated under Manage Travelers. Lead name must be of the syntax "Last Name / First Name, Middle Name" to match correctly. E.g. "Kolovos / Nikolas, Ioannis" or "Leontopoulos / Chris".`);
                 throw new Error('Lead email not found');
             }
 
             const leadName = leadNameParam;
 
+            console.log(localStorage.getItem('agentName'));
+            // Fetch agent details if not in localStorage
+            if (localStorage.getItem('agentName') == null) {
+                const agentUsername = searchParams.get('agent');
+                if (agentUsername) {
+                    try {
+                        const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/username/${agentUsername}`, {
+                            headers: {
+                                "Authorization": `Bearer ${localStorage.getItem("token")}`
+                            }
+                        });
+
+                        if (userResponse.ok) {
+                            const userData = await userResponse.json();
+                            console.log(userData);
+                            if (userData.fullName) localStorage.setItem('agentName', userData.fullName);
+                            if (userData.email) localStorage.setItem('agentEmail', userData.email);
+                            if (userData.phone) localStorage.setItem('agentPhone', userData.phone);
+                        }
+                    } catch (error) {
+                        console.error('Error fetching user details:', error);
+                    }
+                }
+            }
+
             // Get agent info from localStorage or use defaults
-            const agentName = localStorage.getItem('agentName') || searchParams.get('agent') || 'Your Travel Agent';
+            const agentName = localStorage.getItem('agentName') || searchParams.get('agent') || 'Your Personalized Trip Planner';
             const agentEmail = localStorage.getItem('agentEmail') || 'agent@travelagency.com';
             const agentPhone = localStorage.getItem('agentPhone') || '(555) 123-4567';
-            const companyName = localStorage.getItem('companyName') || 'Premier Travel Agency';
+            const companyName = 'Personally Travel';
 
             // Construct email template
             const subject = encodeURIComponent(`Your Travel Itinerary - ${leadName}`);
