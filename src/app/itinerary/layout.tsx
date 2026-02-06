@@ -298,7 +298,7 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
 
 Thank you for choosing ${companyName} for your upcoming travel plans! We're excited to help make your trip memorable.
 
-Your personalized itinerary is ready for review. You can access it anytime using the link below:
+Your personalized itinerary is ready for review. You can view it anytime at:
 
 ${shareableUrl}
 
