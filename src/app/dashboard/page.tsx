@@ -9,7 +9,10 @@ import SupplierModal from "./supplierModal";
 
 interface DecodedToken {
   sub: string;
-  role?: string;
+  role: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
 }
 
 const columnMapping: Record<string, keyof Itinerary | "profit" | "profitPercentage"> = {
@@ -67,6 +70,7 @@ export default function Dashboard() {
         setNewItinerary((prev) => ({ ...prev, agent: decoded.sub })); // Autofill agent
         setUserRole(decoded.role || ""); // Set user role
         setUsername(decoded.sub || ""); // Set username
+
       } catch (error) {
         console.error("Invalid token:", error);
       }

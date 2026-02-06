@@ -23,6 +23,9 @@ export default function LoginPage() {
 
       const data = await response.json();
       localStorage.setItem("token", data.token);
+      localStorage.setItem("agentName", data.fullName);
+      localStorage.setItem("agentEmail", data.email);
+      localStorage.setItem("agentPhone", data.phoneNumber);
 
       router.push("/");
     } catch {
