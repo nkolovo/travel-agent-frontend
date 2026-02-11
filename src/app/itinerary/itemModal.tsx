@@ -129,30 +129,60 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
         setActiveFormats(formats);
     };
 
+    // Helper function to normalize HTML content to use div tags consistently
+    const normalizeHtml = (html: string): string => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        // Convert all <p> tags to <div> tags to match manual typing behavior
+        const paragraphs = Array.from(tempDiv.querySelectorAll('p'));
+        paragraphs.forEach(p => {
+            const div = document.createElement('div');
+            // Move all children from p to div
+            while (p.firstChild) {
+                div.appendChild(p.firstChild);
+            }
+            // If the div is empty or only contains whitespace, add a <br /> for proper spacing
+            if (div.textContent?.trim() === '' && !div.querySelector('br')) {
+                div.innerHTML = '<br />';
+            }
+            // Replace p with div
+            p.parentNode?.replaceChild(div, p);
+        });
+
+        // Normalize <br> tags to <br />
+        let cleanedHtml = tempDiv.innerHTML;
+        cleanedHtml = cleanedHtml.replace(/<br>/g, '<br />');
+        cleanedHtml = cleanedHtml.replace(/&amp;/g, '&#38;');
+
+        return cleanedHtml;
+    };
+
     // Helper function to clean pasted content while preserving basic formatting
     const cleanPastedContent = (html: string): string => {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
 
-        // Remove all style attributes and font-related elements
-        const allElements = tempDiv.querySelectorAll('*');
+        // Remove all style attributes and unwanted attributes
+        const allElements = Array.from(tempDiv.querySelectorAll('*'));
         allElements.forEach(element => {
             element.removeAttribute('style');
             element.removeAttribute('class');
             element.removeAttribute('id');
-
-            // Remove font-related tags but preserve content
-            if (['FONT', 'SPAN'].includes(element.tagName) &&
-                !['B', 'I', 'U', 'STRONG', 'EM'].includes(element.tagName)) {
-                const parent = element.parentNode;
-                while (element.firstChild) {
-                    parent?.insertBefore(element.firstChild, element);
-                }
-                element.remove();
-            }
         });
 
-        return tempDiv.innerHTML;
+        // Unwrap SPAN and FONT elements (preserve content but remove the tag)
+        const spansAndFonts = Array.from(tempDiv.querySelectorAll('span, font'));
+        spansAndFonts.forEach(element => {
+            const parent = element.parentNode;
+            while (element.firstChild) {
+                parent?.insertBefore(element.firstChild, element);
+            }
+            parent?.removeChild(element);
+        });
+
+        // Apply normalization to convert p tags to div tags
+        return normalizeHtml(tempDiv.innerHTML);
     };
 
     // Handle paste events for content cleaning
@@ -903,7 +933,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 onInput={(e) => {
                                     // Update the state with the current content
                                     let html = (e.target as HTMLDivElement).innerHTML;
-                                    html = html.replace("&amp;", "&#38;");
+                                    html = normalizeHtml(html);
                                     setTitle(html);
                                 }}
                             >
@@ -1004,8 +1034,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 onInput={(e) => {
                                     // Get the HTML content
                                     let html = (e.target as HTMLDivElement).innerHTML;
-                                    html = html.replace(/<br>/g, "<br />");
-                                    html = html.replace("&amp;", "&#38;");
+                                    html = normalizeHtml(html);
                                     setDescription(html);
                                 }}
                             >
@@ -1294,8 +1323,7 @@ const ItemModal: React.FC<ItemModalProps> = ({ isOpen, closeModalItem, closeModa
                                 onInput={(e) => {
                                     // Get the HTML content
                                     let html = (e.target as HTMLDivElement).innerHTML;
-                                    html = html.replace(/<br>/g, "<br />");
-                                    html = html.replace("&amp;", "&#38;");
+                                    html = normalizeHtml(html);
                                     setNotes(html);
                                 }}
                             >
