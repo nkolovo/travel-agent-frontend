@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { Droppable, Draggable } from "@hello-pangea/dnd";
 import type { Date, Traveler } from './types/types';
 import { Activity } from './types/types';
 import { FaCalendarAlt, FaPlaneArrival, FaPlaneDeparture, FaShip, FaUser, FaStickyNote } from "react-icons/fa";
@@ -151,21 +151,6 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange, n
     }
   }
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-    const reordered = Array.from(activities);
-    const [removed] = reordered.splice(result.source.index, 1);
-    reordered.splice(result.destination.index, 0, removed);
-
-    // Update priority based on new order
-    const updated = reordered.map((activity, idx) => ({
-      ...activity,
-      priority: idx + 1,
-    }));
-
-    onChange(updated);
-  };
-
   return (
     <div className='mt-2'>
 
@@ -175,11 +160,14 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange, n
           <FaCalendarAlt className="text-blue-500" />
           <span>
             {date?.date
-              ? new Date(date.date + "T00:00:00").toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
+              ? (() => {
+                const d = new Date(date.date + "T00:00:00");
+                const weekday = d.toLocaleDateString('en-GB', { weekday: 'long' });
+                const day = d.toLocaleDateString('en-GB', { day: '2-digit' });
+                const month = d.toLocaleDateString('en-GB', { month: 'long' });
+                const year = d.toLocaleDateString('en-GB', { year: 'numeric' });
+                return `${weekday}, ${day} ${month}, ${year}`;
+              })()
               : ""}
           </span>
         </div>
@@ -225,69 +213,67 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange, n
       {isActivityModalOpen && <ItemModal isOpen={isActivityModalOpen} closeModalActivity={closeActivityModal} activity={selectedActivity} />}
 
       <div>
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="activities">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="flex-1 min-h-0 overflow-y-auto"
-              >
-                {activities.length > 0 ? (
-                  activities.map((activity, index) => (
-                    <Draggable key={activity.id} draggableId={activity.id!.toString()} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className={`mb-4 p-4 rounded shadow-sm ${snapshot.isDragging ? 'bg-blue-200 ring-2 ring-blue-300' : 'bg-gray-100'}`}
-                          style={{ ...provided.draggableProps.style }}
-                        >
-                          {/* Heading row: h2 and X button */}
-                          <div className="flex items-center justify-between">
-                            <h2 className='text-xl font-semibold' dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activity.name) }} />
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (window.confirm("Are you sure you want to remove this item from this date? This action cannot be undone.")) {
-                                  onRemoveItemFromDate(activity);
-                                }
-                              }}
-                              className="text-red-600 hover:text-red-800 transition duration-150 text-2xl"
-                              tabIndex={-1}
-                            >
-                              <FiX />
-                            </button>
-                          </div>
-                          {/* Toolbar and Description row */}
-                          <div className="flex items-start gap-2 mt-2">
-                            <button
-                              onClick={() => onCustomizeAcivity(activity)}
-                              className="text-gray-600 hover:text-blue-600 transition duration-150 mt-1"
-                              tabIndex={-1}
-                            >
-                              <FiEdit />
-                            </button>
-                            <div className="flex flex-col flex-1">
-                              {/* Description */}
-                              <p className='text-gray-600' dangerouslySetInnerHTML={{ __html: truncateDescription(activity.description) }} />
-                            </div>
-                            <p className="text-xs text-gray-700">Retail Price: {activity.retailPrice > 0 ? `€${activity.retailPrice.toLocaleString()}` : "N/A"}</p>
-                            <p className="text-xs text-gray-700">Net Price: {activity.netPrice > 0 ? `€${activity.netPrice.toLocaleString()}` : "N/A"}</p>
-                          </div>
+        <Droppable droppableId={`activities-${date?.id || 'none'}`} type="ACTIVITY">
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="flex-1 min-h-0 overflow-y-auto"
+            >
+              {activities.length > 0 ? (
+                activities.map((activity, index) => (
+                  <Draggable key={activity.id} draggableId={activity.id!.toString()} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={`mb-4 p-4 rounded shadow-sm ${snapshot.isDragging ? 'bg-blue-200 ring-2 ring-blue-300' : 'bg-gray-100'}`}
+                        style={{ ...provided.draggableProps.style }}
+                      >
+                        {/* Heading row: h2 and X button */}
+                        <div className="flex items-center justify-between">
+                          <h2 className='text-xl font-semibold' dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activity.name) }} />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm("Are you sure you want to remove this item from this date? This action cannot be undone.")) {
+                                onRemoveItemFromDate(activity);
+                              }
+                            }}
+                            className="text-red-600 hover:text-red-800 transition duration-150 text-2xl"
+                            tabIndex={-1}
+                          >
+                            <FiX />
+                          </button>
                         </div>
-                      )}
-                    </Draggable>
-                  ))
-                ) : (
-                  <h1>No activities for this date.</h1>
-                )}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+                        {/* Toolbar and Description row */}
+                        <div className="flex items-start gap-2 mt-2">
+                          <button
+                            onClick={() => onCustomizeAcivity(activity)}
+                            className="text-gray-600 hover:text-blue-600 transition duration-150 mt-1"
+                            tabIndex={-1}
+                          >
+                            <FiEdit />
+                          </button>
+                          <div className="flex flex-col flex-1">
+                            {/* Description */}
+                            <p className='text-gray-600' dangerouslySetInnerHTML={{ __html: truncateDescription(activity.description) }} />
+                          </div>
+                          <p className="text-xs text-gray-700">Retail Price: {activity.retailPrice > 0 ? `€${activity.retailPrice.toLocaleString()}` : "N/A"}</p>
+                          <p className="text-xs text-gray-700">Net Price: {activity.netPrice > 0 ? `€${activity.netPrice.toLocaleString()}` : "N/A"}</p>
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                ))
+              ) : (
+                <h1>No activities for this date.</h1>
+              )}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
       </div>
       {showSuccessToast && (
         <div className="toast-notification">
