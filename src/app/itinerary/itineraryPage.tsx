@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, act } from "react";
+import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 
 import type { Date, Activity, Item } from "./types/types";
 
@@ -269,35 +270,131 @@ export default function ItineraryPage({ id }: { id: string }) {
         setItineraryNotes(updatedNotes);
     }
 
-    return (
-        <div className="flex flex-col flex-1 overflow-hidden">
-            {itineraryId !== undefined &&
-                <div className="itinerary-section flex-1 overflow-hidden">
-                    <div className="w-full">
-                        <Header itineraryId={itineraryId} retailPrice={itineraryTripCost} netPrice={itineraryNetCost} />
-                    </div>
-                    <div className="grid grid-cols-12 gap-2 flex-1 overflow-hidden">
-                        <div className="h-[calc(100vh-15rem)] flex flex-col flex-1 overflow-hidden col-span-3">
-                            <DateList
-                                itineraryId={itineraryId}
-                                dates={dates}
-                                onSelectedDate={handleDayClick}
-                                onNewDayClick={handleNewDayClick}
-                                onUpdateDates={handleUpdateDates}
-                                onRemoveDate={handleRemoveDate}
-                            />
-                        </div>
+    const handleDragEnd = (result: DropResult) => {
+        const { source, destination, type } = result;
 
-                        <div className="h-[calc(100vh-15rem)] flex flex-col flex-1 col-span-6 overflow-y-auto">
-                            <DateSummary date={selectedDate} activities={activities} onChange={handleActivityUpdate} notes={itineraryNotes} onNotesUpdate={handleNotesUpdate} />
-                        </div>
+        if (!destination) return;
 
-                        <div className="h-[calc(100vh-15rem)] col-span-3 flex flex-col overflow-y-auto">
-                            <ItemList items={items} onSelectItem={handleSelectItem} onChange={handleItemUpdate} />
-                        </div>
-                    </div>
-                </div>
+        // Handle date reordering
+        if (type === 'DATE') {
+            const reordered = Array.from(dates);
+            const [removed] = reordered.splice(source.index, 1);
+            reordered.splice(destination.index, 0, removed);
+
+            // Recalculate dates sequentially
+            const recalculated: Date[] = [];
+            for (let idx = 0; idx < reordered.length; idx++) {
+                if (idx === 0) {
+                    recalculated.push({ ...reordered[idx] });
+                } else {
+                    const prevDate = new globalThis.Date(recalculated[idx - 1].date);
+                    const nextDate = new globalThis.Date(prevDate);
+                    nextDate.setDate(nextDate.getDate() + 1);
+                    recalculated.push({
+                        ...reordered[idx],
+                        date: nextDate.toISOString().split('T')[0]
+                    });
+                }
             }
-        </div>
+
+            // Update selected date if it moved
+            if (selectedDate) {
+                const movedDate = recalculated.find(d => d.id === selectedDate.id);
+                if (movedDate) {
+                    setSelectedDate(movedDate);
+                }
+            }
+
+            setDates(recalculated);
+            return;
+        }
+
+        // Handle activity reordering within the same date
+        if (type === 'ACTIVITY' && source.droppableId === destination.droppableId) {
+            const reordered = Array.from(activities);
+            const [removed] = reordered.splice(source.index, 1);
+            reordered.splice(destination.index, 0, removed);
+
+            const updated = reordered.map((activity, idx) => ({
+                ...activity,
+                priority: idx + 1,
+            }));
+
+            handleActivityUpdate(updated); // Call handleActivityUpdate to save to backend
+            return;
+        }
+
+        // Handle activity moving to a different date
+        if (type === 'ACTIVITY' && source.droppableId !== destination.droppableId) {
+            const activityId = parseInt(result.draggableId);
+            const activity = activities.find(a => a.id === activityId);
+            
+            if (!activity) return;
+
+            // Extract target date ID from droppableId (format: "date-{dateId}")
+            const targetDateId = parseInt(destination.droppableId.replace('date-', ''));
+            const targetDate = dates.find(d => d.id === targetDateId);
+            
+            if (!targetDate) return;
+
+            // Remove from current date's activities
+            const updatedActivities = activities.filter(a => a.id !== activityId);
+            
+            // Update the activity's date and save to backend
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dates/move/activity/${activityId}/to/${targetDateId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error(`Request error: ${res.status}`);
+                    return res.text(); // Handle text responses
+                })
+                .then(() => {
+                    setActivities(updatedActivities);
+                    // If the target date is selected, refresh its activities
+                    if (selectedDate?.id === targetDateId) {
+                        handleDayClick(targetDate);
+                    }
+                })
+                .catch(error => console.error("Error moving activity to different date:", error));
+        }
+    };
+
+    return (
+        <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="flex flex-col flex-1 overflow-hidden">
+                {itineraryId !== undefined &&
+                    <div className="itinerary-section flex-1 overflow-hidden">
+                        <div className="w-full">
+                            <Header itineraryId={itineraryId} retailPrice={itineraryTripCost} netPrice={itineraryNetCost} />
+                        </div>
+                        <div className="grid grid-cols-12 gap-2 flex-1 overflow-hidden">
+                            <div className="h-[calc(100vh-15rem)] flex flex-col flex-1 overflow-hidden col-span-3">
+                                <DateList
+                                    itineraryId={itineraryId}
+                                    dates={dates}
+                                    selectedDate={selectedDate}
+                                    onSelectedDate={handleDayClick}
+                                    onNewDayClick={handleNewDayClick}
+                                    onUpdateDates={handleUpdateDates}
+                                    onRemoveDate={handleRemoveDate}
+                                />
+                            </div>
+
+                            <div className="h-[calc(100vh-15rem)] flex flex-col flex-1 col-span-6 overflow-y-auto">
+                                <DateSummary date={selectedDate} activities={activities} onChange={handleActivityUpdate} notes={itineraryNotes} onNotesUpdate={handleNotesUpdate} />
+                            </div>
+
+                            <div className="h-[calc(100vh-15rem)] col-span-3 flex flex-col overflow-y-auto">
+                                <ItemList items={items} onSelectItem={handleSelectItem} onChange={handleItemUpdate} />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </DragDropContext>
     );
 }
