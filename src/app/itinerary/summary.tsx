@@ -9,6 +9,7 @@ import ItemModal from './itemModal';
 import TravelerModal from './travelerModal';
 import DOMPurify from "dompurify";
 import NotesModal from './notesModal';
+import PlannerNote from './plannerNote';
 
 interface DateSummaryProps {
   date: Date | undefined; // The selected date
@@ -16,9 +17,10 @@ interface DateSummaryProps {
   onChange: (activities: Activity[]) => void; // Callback to handle changes in the activity list
   notes?: string | undefined;
   onNotesUpdate?: (notes: string) => void;
+  onDateUpdate?: (date: Date) => void; // Callback when the date itself changes (e.g. its planner note)
 }
 
-const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange, notes, onNotesUpdate }) => {
+const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange, notes, onNotesUpdate, onDateUpdate }) => {
   const params = useParams();
   const itineraryId = parseInt(params.id as string);
 
@@ -202,6 +204,9 @@ const DateSummary: React.FC<DateSummaryProps> = ({ date, activities, onChange, n
         </button>
 
       </div>
+
+      {/* Client-facing note for this day */}
+      {date?.id && <PlannerNote key={date.id} date={date} onSaved={(updated) => onDateUpdate?.(updated)} />}
 
       {/* Traveler Info Modal */}
       {isTravelerModalOpen && <TravelerModal isOpen={isTravelerModalOpen} closeModal={closeTravelerModal} itineraryId={itineraryId} travelers={travelers} />}

@@ -57,6 +57,7 @@ export interface Date {
   name: string;
   location: string;
   date: string;
+  plannerNote?: string | null; // Client-facing note, printed on the At a Glance PDF
 }
 
 export interface Item {

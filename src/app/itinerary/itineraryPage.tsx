@@ -131,6 +131,12 @@ export default function ItineraryPage({ id }: { id: string }) {
         setDates(updatedDates);
     };
 
+    // Swap in a saved copy of one date, so later autosaves from the date list don't send stale fields
+    const handleDateUpdate = (updatedDate: Date) => {
+        setDates((prevDates) => prevDates.map(d => d.id === updatedDate.id ? updatedDate : d));
+        setSelectedDate((prev) => prev?.id === updatedDate.id ? updatedDate : prev);
+    };
+
     const handleRemoveDate = (date: Date) => {
         if (date === selectedDate) {
             setSelectedDate(undefined);
@@ -385,7 +391,7 @@ export default function ItineraryPage({ id }: { id: string }) {
                             </div>
 
                             <div className="h-[calc(100vh-15rem)] flex flex-col flex-1 col-span-6 overflow-y-auto">
-                                <DateSummary date={selectedDate} activities={activities} onChange={handleActivityUpdate} notes={itineraryNotes} onNotesUpdate={handleNotesUpdate} />
+                                <DateSummary date={selectedDate} activities={activities} onChange={handleActivityUpdate} notes={itineraryNotes} onNotesUpdate={handleNotesUpdate} onDateUpdate={handleDateUpdate} />
                             </div>
 
                             <div className="h-[calc(100vh-15rem)] col-span-3 flex flex-col overflow-y-auto">

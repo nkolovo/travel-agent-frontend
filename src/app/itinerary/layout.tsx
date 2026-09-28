@@ -3,7 +3,7 @@
 import { ReactNode, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation"; // Import useSearchParams
 import { HiArrowNarrowLeft } from "react-icons/hi";
-import { HiDocumentText, HiEye, HiPaperAirplane } from "react-icons/hi"; // Import new icons
+import { HiCalendar, HiDocumentText, HiEye, HiPaperAirplane } from "react-icons/hi"; // Import new icons
 
 export default function ItineraryLayout({ children }: { children: ReactNode }) {
     const router = useRouter();
@@ -11,6 +11,7 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
     const searchParams = useSearchParams(); // Get query params from the URL
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [isPreviewingPdf, setIsPreviewingPdf] = useState(false);
+    const [isGeneratingGlancePdf, setIsGeneratingGlancePdf] = useState(false);
 
     // Define a mapping of query parameter keys to custom display names
     const customNames: Record<string, string> = {
@@ -141,16 +142,18 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
             });
     }
 
-    function generatePdf(): void {
+    // format "glance" downloads the short day-by-day version instead of the full itinerary
+    function generatePdf(format: "full" | "glance" = "full"): void {
         const itineraryId = params.id;
         if (!itineraryId) {
             console.warn("No itinerary id found");
             return;
         }
 
-        setIsGeneratingPdf(true);
+        const setLoading = format === "glance" ? setIsGeneratingGlancePdf : setIsGeneratingPdf;
+        setLoading(true);
 
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/generate-pdf/${itineraryId}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/itineraries/generate-pdf/${itineraryId}?format=${format}`, {
             method: "GET",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("token")}`,
@@ -167,7 +170,9 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `itinerary_${itineraryId}.pdf`;
+                a.download = format === "glance"
+                    ? `itinerary_${itineraryId}_at_a_glance.pdf`
+                    : `itinerary_${itineraryId}.pdf`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -178,7 +183,7 @@ export default function ItineraryLayout({ children }: { children: ReactNode }) {
                 alert('Failed to generate PDF. Please try again.');
             })
             .finally(() => {
-                setIsGeneratingPdf(false);
+                setLoading(false);
             });
     }
 
@@ -438,6 +443,42 @@ This email and any attachments are confidential and intended solely for the reci
                             </svg>
                         ) : (
                             <HiDocumentText className="text-lg" />
+                        )}
+                    </button>
+
+                    {/* At a Glance PDF Button */}
+                    <button
+                        className={`flex items-center transition-all duration-200 p-1 ${isGeneratingGlancePdf
+                            ? 'text-blue-500 cursor-not-allowed'
+                            : 'text-gray-600 hover:text-gray-800'
+                            }`}
+                        title={isGeneratingGlancePdf ? "Generating At a Glance PDF..." : "Download At a Glance PDF"}
+                        onClick={() => generatePdf("glance")}
+                        disabled={isGeneratingGlancePdf}
+                    >
+                        {isGeneratingGlancePdf ? (
+                            <svg
+                                className="animate-spin h-5 w-5"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                ></circle>
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                        ) : (
+                            <HiCalendar className="text-lg" />
                         )}
                     </button>
 
